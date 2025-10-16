@@ -1,5 +1,6 @@
-- **Title**: "Poser Autorigger"
-- **Description**: "An autorigger for Poser characters imported as FBX files."
+# Poser Autorigger for Blender
+
+An autorigger for Poser characters imported as FBX files.
 
 ## Base Feature Set for Poser FBX Auto-Rigger in Blender
 
