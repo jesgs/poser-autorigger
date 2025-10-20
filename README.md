@@ -4,6 +4,14 @@ An autorigger for Poser characters imported as FBX files.
 
 This auto-rigging tool is geared specifically towards FBX imported figures that already have an existing base armature. This tool takes that existing armature and automates the setup of IK/FK chains, bone collections, and bone widgets.
 
+## **Workflow Summary**
+
+1. User imports their FBX Poser character to Blender.
+2. Runs auto-rigger script/addon.
+3. Addon detects the armature, generates required IK/FK chains, creates controls, and assigns custom shapes.
+4. Rig is ready for animation with standard Blender controls.
+
+
 ## Base Feature Set for Poser FBX Auto-Rigger in Blender
 
 ### 1. IK/FK Chain Creation
@@ -48,11 +56,3 @@ This auto-rigging tool is geared specifically towards FBX imported figures that 
 - **Validation:**
   - Check for missing bones or naming conventions (warn if not standard).
   - Warn if FBX armature isn’t compatible (missing limbs, etc.).
-
----
-
-#### **Workflow Summary**
-1. User imports their FBX Poser character to Blender.
-2. Runs auto-rigger script/addon.
-3. Addon detects the armature, generates required IK/FK chains, creates controls, and assigns custom shapes.
-4. Rig is ready for animation with standard Blender controls.
