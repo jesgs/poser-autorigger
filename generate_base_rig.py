@@ -81,6 +81,20 @@ def setup_poser_figure(objects):
             # head and neck bone are off-center, let's fix
             create_root(edit_bones)
             create_lower_abdomen_bone(edit_bones)
+
+            # create pelvis and buttock bones but first rename the current buttock bones
+            # edit_bones['Left_Buttock'].name = 'Left_Hip'
+            # edit_bones['Right_Buttock'].name = 'Right_Hip'
+            #
+            # bone_left_pelvis = edit_bones.new('Left_Pelvis')
+            # bone_right_pelvis = edit_bones.new('Right_Pelvis')
+            # bone_left_buttock = edit_bones.new('Left_Buttock')
+            # bone_right_buttock = edit_bones.new('Right_Buttock')
+            # bone_left_pelvis.parent = edit_bones['Hip']
+            # bone_right_pelvis.parent = edit_bones['Hip']
+            # bone_left_buttock.parent = bone_left_pelvis
+            # bone_right_buttock.parent = bone_right_pelvis
+
             properties_bone = create_properties_bone(edit_bones)
 
             arm_ik_bone_chains = [
@@ -91,7 +105,10 @@ def setup_poser_figure(objects):
             ]
 
             leg_ik_bone_chains = [
-                ''
+                'Foot',
+                'Shin',
+                'Thigh',
+                'Hip'
             ]
 
             # change bone-roll to Global +Z to prevent issues later on
