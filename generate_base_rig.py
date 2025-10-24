@@ -1,30 +1,30 @@
 import bpy
 
 def rename_all_bones(armature, prefix = ''):
-    bones = armature.data.bones
+    bones = armature.data.edit_bones
 
     for bone in bones:
-        new_name = rename_bone(bone.name)
+        new_name = rename_bone(bone.name, prefix)
         if new_name != "":
-            armature.data.bones[bone.name].name = prefix + new_name
+            armature.data.edit_bones[bone.name].name = new_name
 
 
-def rename_bone(name):
-    if "root" in name:
+def rename_bone(name, prefix = ''):
+    if "root" in name or "PROPERTIES" in name:
         return ""
 
+    new_name = name
     if name.find('Left_') != -1:
-        return name[5:] + '.L'
-
-    if name.find('Right_') != -1:
-        return name[6:] + '.R'
+        new_name = name[5:] + '.L'
+    elif name.find('Right_') != -1:
+        new_name = name[6:] + '.R'
 
     if name.find('l', 0, 1) != -1:
-        name = name[1:] + '.L'
+        new_name = name[1:] + '.L'
     elif name.find('r', 0, 1) != -1:
-        name = name[1:] + '.R'
+        new_name = name[1:] + '.R'
 
-    return name
+    return prefix + new_name
 
 
 def setup_poser_figure(objects):
@@ -80,22 +80,12 @@ def setup_poser_figure(objects):
             edit_bones = obj.data.edit_bones
             # head and neck bone are off-center, let's fix
             create_root(edit_bones)
-            create_lower_abdomen_bone(edit_bones)
+            create_lower_abdomen_bone(obj.data.edit_bones)
+            #create_pelvis_bones()
 
-            # create pelvis and buttock bones but first rename the current buttock bones
-            # edit_bones['Left_Buttock'].name = 'Left_Hip'
-            # edit_bones['Right_Buttock'].name = 'Right_Hip'
-            #
-            # bone_left_pelvis = edit_bones.new('Left_Pelvis')
-            # bone_right_pelvis = edit_bones.new('Right_Pelvis')
-            # bone_left_buttock = edit_bones.new('Left_Buttock')
-            # bone_right_buttock = edit_bones.new('Right_Buttock')
-            # bone_left_pelvis.parent = edit_bones['Hip']
-            # bone_right_pelvis.parent = edit_bones['Hip']
-            # bone_left_buttock.parent = bone_left_pelvis
-            # bone_right_buttock.parent = bone_right_pelvis
+            rename_all_bones(obj, 'DEF-')
 
-            properties_bone = create_properties_bone(edit_bones)
+            create_properties_bone(obj.data.edit_bones)
 
             arm_ik_bone_chains = [
                 'Hand',
@@ -103,7 +93,6 @@ def setup_poser_figure(objects):
                 'Shoulder',
                 'Collar'
             ]
-
             leg_ik_bone_chains = [
                 'Foot',
                 'Shin',
@@ -111,17 +100,92 @@ def setup_poser_figure(objects):
                 'Hip'
             ]
 
+            create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains)
+
             # change bone-roll to Global +Z to prevent issues later on
             bpy.ops.armature.select_all(action='SELECT')
             bpy.ops.armature.calculate_roll(type='GLOBAL_POS_Z')
 
             # separate_armatures(figure_name, obj)
             # strip_trailing_digits_from_bones(obj)
-            rename_all_bones(obj, 'DEF-')
 
             bpy.ops.object.editmode_toggle()  # we're done here
 
         bpy.ops.object.select_all(action='DESELECT')
+
+
+def create_fkik_chains(edit_bones, bone_chains):
+    fk_chains = []
+    ik_chains = []
+
+    for bone in edit_bones:
+        for bc in bone_chains:
+            if bone.name.find(bc) == -1:
+                continue
+
+            bone_name = bone.name
+            fk_bone_name = bone_name.replace('DEF', 'FK')
+            ik_bone_name = bone_name.replace('DEF', 'IK')
+            fk_chains.append(fk_bone_name)
+            ik_chains.append(ik_bone_name)
+
+    for ik_chain_item in ik_chains:
+        deform_bone_name = ik_chain_item.replace('IK', 'DEF')
+        ik_bone = edit_bones.new(ik_chain_item)
+        ik_bone.use_deform = False
+
+        ik_bone.head[0] = edit_bones[deform_bone_name].head[0]
+        ik_bone.head[1] = edit_bones[deform_bone_name].head[1]
+        ik_bone.head[2] = edit_bones[deform_bone_name].head[2]
+        ik_bone.head[0] = edit_bones[deform_bone_name].head[0]
+        ik_bone.head[1] = edit_bones[deform_bone_name].head[1]
+        ik_bone.head[2] = edit_bones[deform_bone_name].head[2]
+
+        ik_bone.tail[0] = edit_bones[deform_bone_name].tail[0]
+        ik_bone.tail[1] = edit_bones[deform_bone_name].tail[1]
+        ik_bone.tail[2] = edit_bones[deform_bone_name].tail[2]
+        ik_bone.tail[0] = edit_bones[deform_bone_name].tail[0]
+        ik_bone.tail[1] = edit_bones[deform_bone_name].tail[1]
+        ik_bone.tail[2] = edit_bones[deform_bone_name].tail[2]
+
+        ik_bone.bbone_z = .002
+        ik_bone.bbone_x = .002
+        ik_bone.color.palette = 'THEME01'
+        ik_bone.use_connect = False
+
+        # find which side we're on
+        suffix = '.L'
+        if '.R' in ik_chain_item:
+            suffix = '.R'
+
+        # parenting
+        if 'Collar' in ik_chain_item:
+            ik_bone.parent = edit_bones['DEF-Chest']
+
+        if 'Shoulder' in ik_chain_item:
+            ik_bone.parent = edit_bones['IK-Collar' + suffix]
+
+        if 'Forearm' in ik_chain_item:
+            ik_bone.parent = edit_bones['IK-Shoulder' + suffix]
+
+        if 'Hand' in ik_chain_item:
+            ik_bone.parent = edit_bones['IK-Forearm' + suffix]
+
+
+def create_pelvis_bones():
+    pass
+    # create pelvis and buttock bones but first rename the current buttock bones
+    # edit_bones['Left_Buttock'].name = 'Left_Hip'
+    # edit_bones['Right_Buttock'].name = 'Right_Hip'
+    #
+    # bone_left_pelvis = edit_bones.new('Left_Pelvis')
+    # bone_right_pelvis = edit_bones.new('Right_Pelvis')
+    # bone_left_buttock = edit_bones.new('Left_Buttock')
+    # bone_right_buttock = edit_bones.new('Right_Buttock')
+    # bone_left_pelvis.parent = edit_bones['Hip']
+    # bone_right_pelvis.parent = edit_bones['Hip']
+    # bone_left_buttock.parent = bone_left_pelvis
+    # bone_right_buttock.parent = bone_right_pelvis
 
 
 def create_properties_bone(edit_bones):
@@ -139,8 +203,6 @@ def create_properties_bone(edit_bones):
     properties_bone.color.palette = 'THEME03'
     properties_bone.bbone_z = 0.01
     properties_bone.bbone_x = 0.01
-
-    return properties_bone
 
 
 def create_lower_abdomen_bone(edit_bones):
