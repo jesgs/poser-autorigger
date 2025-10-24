@@ -100,7 +100,11 @@ def setup_poser_figure(objects):
                 'Hip'
             ]
 
-            create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains)
+            # arm chains
+            create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'IK', '.L', 'THEME01', 0.004)
+            create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'IK', '.R', 'THEME01', 0.004)
+            create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'FK', '.L', 'THEME03', 0.002)
+            create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'FK', '.R', 'THEME03', 0.002)
 
             # change bone-roll to Global +Z to prevent issues later on
             bpy.ops.armature.select_all(action='SELECT')
@@ -114,63 +118,50 @@ def setup_poser_figure(objects):
         bpy.ops.object.select_all(action='DESELECT')
 
 
-def create_fkik_chains(edit_bones, bone_chains):
-    fk_chains = []
-    ik_chains = []
-
+def create_fkik_chains(edit_bones, bone_chains, parent = '', prefix = 'IK', suffix ='.L', palette = 'THEME01', bone_size = 0.002):
+    fkik_chains = []
+    completed_fkik_chains = []
     for bone in edit_bones:
         for bc in bone_chains:
             if bone.name.find(bc) == -1:
                 continue
 
+            if bone.name.find(suffix) == -1:
+                continue
+
             bone_name = bone.name
-            fk_bone_name = bone_name.replace('DEF', 'FK')
-            ik_bone_name = bone_name.replace('DEF', 'IK')
-            fk_chains.append(fk_bone_name)
-            ik_chains.append(ik_bone_name)
+            fkik_bone_name = bone_name.replace('DEF', prefix)
+            fkik_chains.append(fkik_bone_name)
 
-    for ik_chain_item in ik_chains:
-        deform_bone_name = ik_chain_item.replace('IK', 'DEF')
-        ik_bone = edit_bones.new(ik_chain_item)
-        ik_bone.use_deform = False
+    for i, fkik_chain_item in enumerate(fkik_chains):
+        deform_bone_name = fkik_chain_item.replace(prefix, 'DEF')
+        fkik_bone = edit_bones.new(fkik_chain_item)
+        fkik_bone.use_deform = False
 
-        ik_bone.head[0] = edit_bones[deform_bone_name].head[0]
-        ik_bone.head[1] = edit_bones[deform_bone_name].head[1]
-        ik_bone.head[2] = edit_bones[deform_bone_name].head[2]
-        ik_bone.head[0] = edit_bones[deform_bone_name].head[0]
-        ik_bone.head[1] = edit_bones[deform_bone_name].head[1]
-        ik_bone.head[2] = edit_bones[deform_bone_name].head[2]
+        match_bone_head_coordinates(deform_bone_name, edit_bones, fkik_bone)
+        match_bone_tail_coordinates(deform_bone_name, edit_bones, fkik_bone)
 
-        ik_bone.tail[0] = edit_bones[deform_bone_name].tail[0]
-        ik_bone.tail[1] = edit_bones[deform_bone_name].tail[1]
-        ik_bone.tail[2] = edit_bones[deform_bone_name].tail[2]
-        ik_bone.tail[0] = edit_bones[deform_bone_name].tail[0]
-        ik_bone.tail[1] = edit_bones[deform_bone_name].tail[1]
-        ik_bone.tail[2] = edit_bones[deform_bone_name].tail[2]
-
-        ik_bone.bbone_z = .002
-        ik_bone.bbone_x = .002
-        ik_bone.color.palette = 'THEME01'
-        ik_bone.use_connect = False
-
-        # find which side we're on
-        suffix = '.L'
-        if '.R' in ik_chain_item:
-            suffix = '.R'
+        fkik_bone.bbone_z = fkik_bone.bbone_x = bone_size
+        fkik_bone.color.palette = palette
+        fkik_bone.use_connect = False
 
         # parenting
-        if 'Collar' in ik_chain_item:
-            ik_bone.parent = edit_bones['DEF-Chest']
+        if 0 == i:
+            fkik_bone.parent = edit_bones[parent]
+        else:
+            fkik_bone.parent = edit_bones[fkik_chains[i - 1]]
 
-        if 'Shoulder' in ik_chain_item:
-            ik_bone.parent = edit_bones['IK-Collar' + suffix]
+        completed_fkik_chains.append(fkik_bone)
 
-        if 'Forearm' in ik_chain_item:
-            ik_bone.parent = edit_bones['IK-Shoulder' + suffix]
+    return completed_fkik_chains
 
-        if 'Hand' in ik_chain_item:
-            ik_bone.parent = edit_bones['IK-Forearm' + suffix]
 
+def match_bone_tail_coordinates(deform_bone_name, edit_bones, bone):
+    bone.tail = edit_bones[deform_bone_name].tail
+
+
+def match_bone_head_coordinates(deform_bone_name, edit_bones, bone):
+    bone.head = edit_bones[deform_bone_name].head
 
 def create_pelvis_bones():
     pass
@@ -192,12 +183,8 @@ def create_properties_bone(edit_bones):
     # create new properties bone
     properties_bone = edit_bones.new('PROPERTIES')
     properties_bone.parent = edit_bones['root']
-    properties_bone.head[0] = 0
-    properties_bone.head[1] = 0
-    properties_bone.head[2] = 0
-    properties_bone.tail[0] = 0
-    properties_bone.tail[1] = 0.25
-    properties_bone.tail[2] = 0
+    properties_bone.head = [0, 0, 0]
+    properties_bone.tail = [0, 0.25, 0]
     properties_bone.use_deform = False
 
     properties_bone.color.palette = 'THEME03'
@@ -210,12 +197,8 @@ def create_lower_abdomen_bone(edit_bones):
     # then parent abdomen to new bone
     bone_lower_abdomen = edit_bones.new('LowerAbdomen')
 
-    bone_lower_abdomen.head[0] = edit_bones['Hip'].tail[0]
-    bone_lower_abdomen.head[1] = edit_bones['Hip'].tail[1]
-    bone_lower_abdomen.head[2] = edit_bones['Hip'].tail[2]
-    bone_lower_abdomen.tail[0] = edit_bones['Abdomen'].head[0]
-    bone_lower_abdomen.tail[1] = edit_bones['Abdomen'].head[1]
-    bone_lower_abdomen.tail[2] = edit_bones['Abdomen'].head[2]
+    bone_lower_abdomen.head = edit_bones['Hip'].tail
+    bone_lower_abdomen.tail = edit_bones['Abdomen'].head
 
     bone_lower_abdomen.parent = edit_bones['Hip']
     edit_bones['Abdomen'].parent = bone_lower_abdomen
