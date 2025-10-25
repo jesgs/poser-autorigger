@@ -33,7 +33,7 @@ def setup_poser_figure(objects):
     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 
     bpy.ops.object.select_all(action='DESELECT')
-
+    
     for obj in objects:
         bpy.context.view_layer.objects.active = bpy.context.view_layer.objects[obj.name]
         bpy.context.active_object.select_set(state=True)
@@ -133,9 +133,9 @@ def setup_poser_figure(objects):
 
             bpy.ops.object.editmode_toggle()  # we're done here
 
-            # bpy.ops.object.posemode_toggle() # pose mode now — setting up constraints.
+            bpy.ops.object.posemode_toggle() # pose mode now — setting up constraints.
 
-        bpy.ops.object.select_all(action='DESELECT')
+#        bpy.ops.object.select_all(action='DESELECT')
 
 
 def fix_bones(edit_bones):
@@ -295,11 +295,12 @@ class GenerateBaseRig_Operator(bpy.types.Operator):
         setup_poser_figure(context.selected_objects)
         return {'FINISHED'}
 
-class RigPoserArmature_Panel(bpy.types.Panel):
+class RigPoserArmature_PT_Panel(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_label = "Rig Poser"
     bl_category = "Rig Poser"
+    bl_idname = "VIEW3D_PT_RigPoserArmature_PT_Panel"
 
     def draw(self, context):
         layout = self.layout
@@ -308,7 +309,7 @@ class RigPoserArmature_Panel(bpy.types.Panel):
 
         op_row.operator("poser.generate_base_rig", icon="POSE_HLT")
 
-classes = [RigPoserArmature_Panel, GenerateBaseRig_Operator]
+classes = [RigPoserArmature_PT_Panel, GenerateBaseRig_Operator]
 
 def register():
     for cls in classes:
