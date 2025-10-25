@@ -1,3 +1,5 @@
+﻿from typing import Any
+
 import bpy
 
 def rename_all_bones(armature, prefix = ''):
@@ -75,16 +77,21 @@ def setup_poser_figure(objects):
             bpy.ops.object.editmode_toggle()  # go into edit mode
             bpy.context.object.data.display_type = 'BBONE'
 
-            obj = bpy.context.object
+            _obj = bpy.context.object
+
+            rigging_collection = _obj.data.collections.new('Rigging')
+            deform_collection = _obj.data.collections.new('Deform')
+            deform_collection.parent = rigging_collection
+
             # fix some issues with bones coming from Poser
-            edit_bones = obj.data.edit_bones
+            edit_bones = _obj.data.edit_bones
 
             fix_bones(edit_bones)
             create_root(edit_bones)
             create_lower_abdomen_bone(edit_bones)
             #create_pelvis_bones()
+            rename_all_bones(_obj, 'DEF-')
 
-            rename_all_bones(obj, 'DEF-')
 
             arm_ik_bone_chains = [
                 'Collar',
@@ -108,8 +115,8 @@ def setup_poser_figure(objects):
                 'Head'
             ]
 
-            spine_ik_chain = create_fkik_chains(edit_bones, spine_ik_bone_chains, 'root', 'IK', '', 'THEME03', 0.004, False, True)
-            spine_fk_chain = create_fkik_chains(edit_bones, spine_ik_bone_chains, 'root', 'FK', '', 'THEME03', 0.002, False, True)
+            spine_ik_chain = create_fkik_chains(edit_bones, spine_ik_bone_chains, 'root', 'IK', '', 'THEME09', 0.004, False, True)
+            spine_fk_chain = create_fkik_chains(edit_bones, spine_ik_bone_chains, 'root', 'FK', '', 'THEME04', 0.002, False, True)
 
             # arm chains
             arm_ik_chain_left = create_fkik_chains(edit_bones, arm_ik_bone_chains, 'IK-Chest', 'IK', '.L', 'THEME01', 0.004)
@@ -117,11 +124,19 @@ def setup_poser_figure(objects):
             arm_fk_chain_left = create_fkik_chains(edit_bones, arm_ik_bone_chains, 'FK-Chest', 'FK', '.L', 'THEME03', 0.002)
             arm_fk_chain_right = create_fkik_chains(edit_bones, arm_ik_bone_chains, 'FK-Chest', 'FK', '.R', 'THEME03', 0.002)
 
+            arm_ik_chain = arm_ik_chain_right + arm_ik_chain_left
+            arm_fk_chain = arm_fk_chain_right + arm_fk_chain_left
+
             # leg chains
             leg_ik_chain_left = create_fkik_chains(edit_bones, leg_ik_bone_chains, 'IK-Hip', 'IK', '.L', 'THEME01', 0.004)
             leg_ik_chain_right = create_fkik_chains(edit_bones, leg_ik_bone_chains, 'IK-Hip', 'IK', '.R', 'THEME01', 0.004)
             leg_fk_chain_left = create_fkik_chains(edit_bones, leg_ik_bone_chains, 'FK-Hip', 'FK', '.L', 'THEME03', 0.002)
             leg_fk_chain_right = create_fkik_chains(edit_bones, leg_ik_bone_chains, 'FK-Hip', 'FK', '.R', 'THEME03', 0.002)
+
+            leg_ik_chain = leg_ik_chain_right + leg_ik_chain_left
+            leg_fk_chain = leg_fk_chain_right + leg_fk_chain_left
+
+            # todo: finger ik/fk chains
 
             create_properties_bone(edit_bones)
 
@@ -135,8 +150,47 @@ def setup_poser_figure(objects):
             bpy.ops.object.editmode_toggle()  # we're done here
 
             bpy.ops.object.posemode_toggle() # pose mode now — setting up constraints.
+            # add copy constraints
+            add_copy_constraints(_obj, spine_ik_chain, 'IK', 'FK', 'Copy Transforms IK Spine')
+            add_copy_constraints(_obj, spine_fk_chain, 'FK', 'DEF', 'Copy Transforms FK Spine')
+            add_copy_constraints(_obj, arm_ik_chain, 'IK', 'FK', 'Copy Transforms IK Arm')
+            add_copy_constraints(_obj, arm_fk_chain, 'FK', 'DEF', 'Copy Transforms FK Arm')
+            add_copy_constraints(_obj, leg_ik_chain, 'IK', 'FK', 'Copy Transforms IK Leg')
+            add_copy_constraints(_obj, leg_fk_chain, 'FK', 'DEF', 'Copy Transforms FK Leg')
+            # create IK target controls
+            # if prefix == 'IK' and create_handle:
+            #     print(fkik_chains)
+            #     last = len(fkik_chains) - 1
+            #     last_bone = edit_bones[fkik_chains[last]]
+            #     ik_handle_name = fkik_chains[last].replace(prefix + '-', prefix + '-Target-')
+            #     ik_handle = edit_bones.new(ik_handle_name)
+            #     ik_handle.head = last_bone.head
+            #     ik_handle.tail = last_bone.tail
+            #     ik_handle.bbone_z = ik_handle.bbone_x = bone_size * 2
+            #     ik_handle.length = bone_size * 10
+            #     ik_handle.color.palette = palette
+            #     completed_fkik_chains.append(ik_handle)
 
-#        bpy.ops.object.select_all(action='DESELECT')
+            #        bpy.ops.object.select_all(action='DESELECT')
+
+
+
+def add_copy_constraints(obj, bone_collection: list[Any], prefix_target, prefix_aim, constraint_friendly_name = ''):
+    bones = obj.pose.bones
+    for bone in bone_collection:
+        aim_bone_name = bone.name.replace(prefix_target, prefix_aim)
+        if bone.name == '' or aim_bone_name == '':
+            continue
+        print(bone.name, aim_bone_name, prefix_target, prefix_aim)
+        aim_bone = bones[aim_bone_name]
+
+        # Creates the constraint itself
+        constraint = aim_bone.constraints.new("COPY_TRANSFORMS")
+        constraint.name = constraint_friendly_name or "Copy Transforms"
+
+        # Modifies its data right away
+        constraint.target = obj
+        constraint.subtarget = bone.name
 
 
 def fix_bones(edit_bones):
@@ -177,7 +231,6 @@ def create_fkik_chains(edit_bones, bone_chains, parent = '', prefix = 'IK', suff
                 continue
 
             if deform_bone_name != bone.name:
-                print(deform_bone_name, bone.name)
                 continue
 
             bone_name = bone.name
@@ -203,20 +256,6 @@ def create_fkik_chains(edit_bones, bone_chains, parent = '', prefix = 'IK', suff
             fkik_bone.parent = edit_bones[fkik_chains[i - 1]]
 
         completed_fkik_chains.append(fkik_bone)
-
-    # create IK target controls
-    # if prefix == 'IK' and create_handle:
-    #     print(fkik_chains)
-    #     last = len(fkik_chains) - 1
-    #     last_bone = edit_bones[fkik_chains[last]]
-    #     ik_handle_name = fkik_chains[last].replace(prefix + '-', prefix + '-Target-')
-    #     ik_handle = edit_bones.new(ik_handle_name)
-    #     ik_handle.head = last_bone.head
-    #     ik_handle.tail = last_bone.tail
-    #     ik_handle.bbone_z = ik_handle.bbone_x = bone_size * 2
-    #     ik_handle.length = bone_size * 10
-    #     ik_handle.color.palette = palette
-    #     completed_fkik_chains.append(ik_handle)
 
     return completed_fkik_chains
 
