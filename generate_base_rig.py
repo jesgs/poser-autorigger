@@ -78,14 +78,15 @@ def setup_poser_figure(objects):
             obj = bpy.context.object
             # fix some issues with bones coming from Poser
             edit_bones = obj.data.edit_bones
-            # head and neck bone are off-center, let's fix
+
+            fix_bones(edit_bones)
             create_root(edit_bones)
-            create_lower_abdomen_bone(obj.data.edit_bones)
+            create_lower_abdomen_bone(edit_bones)
             #create_pelvis_bones()
 
             rename_all_bones(obj, 'DEF-')
 
-            create_properties_bone(obj.data.edit_bones)
+            create_properties_bone(edit_bones)
 
             arm_ik_bone_chains = [
                 'Hand',
@@ -97,14 +98,31 @@ def setup_poser_figure(objects):
                 'Foot',
                 'Shin',
                 'Thigh',
-                'Hip'
+                'Buttock'
+            ]
+            spine_ik_bone_chains = [
+                'Hip',
+                'LowerAbdomen',
+                'Abdomen',
+                'Chest',
+                'Neck',
+                'Head'
             ]
 
+            spine_ik_chain = create_fkik_chains(obj.data.edit_bones, spine_ik_bone_chains, 'root', 'IK', '', 'THEME03', 0.004, False)
+            spine_fk_chain = create_fkik_chains(obj.data.edit_bones, spine_ik_bone_chains, 'root', 'FK', '', 'THEME03', 0.002)
+
             # arm chains
-            create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'IK', '.L', 'THEME01', 0.004)
-            create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'IK', '.R', 'THEME01', 0.004)
-            create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'FK', '.L', 'THEME03', 0.002)
-            create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'FK', '.R', 'THEME03', 0.002)
+            arm_ik_chain_left = create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'IK', '.L', 'THEME01', 0.004)
+            arm_ik_chain_right = create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'IK', '.R', 'THEME01', 0.004)
+            arm_fk_chain_left = create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'FK', '.L', 'THEME03', 0.002)
+            arm_fk_chain_right = create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'FK', '.R', 'THEME03', 0.002)
+
+            # leg chains
+            leg_ik_chain_left = create_fkik_chains(obj.data.edit_bones, leg_ik_bone_chains, 'DEF-Hip', 'IK', '.L', 'THEME01', 0.004)
+            leg_ik_chain_right = create_fkik_chains(obj.data.edit_bones, leg_ik_bone_chains, 'DEF-Hip', 'IK', '.R', 'THEME01', 0.004)
+            leg_fk_chain_left = create_fkik_chains(obj.data.edit_bones, leg_ik_bone_chains, 'DEF-Hip', 'FK', '.L', 'THEME03', 0.002)
+            leg_fk_chain_right = create_fkik_chains(obj.data.edit_bones, leg_ik_bone_chains, 'DEF-Hip', 'FK', '.R', 'THEME03', 0.002)
 
             # change bone-roll to Global +Z to prevent issues later on
             bpy.ops.armature.select_all(action='SELECT')
@@ -115,10 +133,40 @@ def setup_poser_figure(objects):
 
             bpy.ops.object.editmode_toggle()  # we're done here
 
+            # bpy.ops.object.posemode_toggle() # pose mode now — setting up constraints.
+
         bpy.ops.object.select_all(action='DESELECT')
 
 
-def create_fkik_chains(edit_bones, bone_chains, parent = '', prefix = 'IK', suffix ='.L', palette = 'THEME01', bone_size = 0.002):
+def fix_bones(edit_bones):
+    # head and neck bone are off-center, let's fix
+    edit_bones['Head'].head[0] = 0  # this should also move the tail of the neck bone since they're connected
+
+    # let's also align tail of chest bone with head of neck bone
+    # move the z and y axi, but we need to find the center
+    chest_tail_y = edit_bones['Chest'].tail[1]
+    chest_tail_z = edit_bones['Chest'].tail[2]
+    neck_head_y = edit_bones['Neck'].head[1]
+    neck_head_z = edit_bones['Neck'].head[2]
+    center_y = (neck_head_y + chest_tail_y) / 2
+    center_z = (neck_head_z + chest_tail_z) / 2
+
+    edit_bones['Neck'].head[1] = center_y
+    edit_bones['Neck'].head[2] = center_z
+    edit_bones['Chest'].tail[1] = center_y
+    edit_bones['Chest'].tail[2] = center_z
+
+    # fix eyes and toe bones as well
+    eye_y = edit_bones['Left_Eye'].tail[1]
+    edit_bones['Left_Eye'].tail[1] = eye_y - -0.1
+    edit_bones['Right_Eye'].tail[1] = eye_y - -0.1
+
+    toe_y = edit_bones['Left_Toe'].tail[1]
+    edit_bones['Left_Toe'].tail[1] = toe_y - -0.1
+    edit_bones['Right_Toe'].tail[1] = toe_y - -0.1
+
+
+def create_fkik_chains(edit_bones, bone_chains, parent = '', prefix = 'IK', suffix ='.L', palette = 'THEME01', bone_size = 0.002, create_handle = True):
     fkik_chains = []
     completed_fkik_chains = []
     for bone in edit_bones:
@@ -153,6 +201,19 @@ def create_fkik_chains(edit_bones, bone_chains, parent = '', prefix = 'IK', suff
 
         completed_fkik_chains.append(fkik_bone)
 
+    # create IK target controls
+    if prefix == 'IK' and create_handle:
+        last = len(fkik_chains) - 1
+        last_bone = edit_bones[fkik_chains[last]]
+        ik_handle_name = fkik_chains[last].replace(prefix + '-', prefix + '-Target-')
+        ik_handle = edit_bones.new(ik_handle_name)
+        ik_handle.head = last_bone.head
+        ik_handle.tail = last_bone.tail
+        ik_handle.bbone_z = ik_handle.bbone_x = bone_size * 2
+        ik_handle.length = bone_size * 10
+        ik_handle.color.palette = palette
+        completed_fkik_chains.append(ik_handle)
+
     return completed_fkik_chains
 
 
@@ -162,6 +223,7 @@ def match_bone_tail_coordinates(deform_bone_name, edit_bones, bone):
 
 def match_bone_head_coordinates(deform_bone_name, edit_bones, bone):
     bone.head = edit_bones[deform_bone_name].head
+
 
 def create_pelvis_bones():
     pass
@@ -207,17 +269,11 @@ def create_lower_abdomen_bone(edit_bones):
 
 
 def create_root(edit_bones):
-    edit_bones['Head'].head[0] = 0  # this should also move the tail of the neck bone since they're connected
-
     # rename Body to root, disconnect, and drop to 0
     edit_bones['Hip'].use_connect = False
     edit_bones['Body'].use_deform = False
-    edit_bones['Body'].head[0] = 0
-    edit_bones['Body'].head[1] = 0
-    edit_bones['Body'].head[2] = 0
-    edit_bones['Body'].tail[0] = 0
-    edit_bones['Body'].tail[1] = 0.5
-    edit_bones['Body'].tail[2] = 0
+    edit_bones['Body'].head = [0, 0, 0]
+    edit_bones['Body'].tail = [0, 0.5, 0]
     edit_bones['Body'].color.palette = 'THEME09'
     edit_bones['Body'].name = 'root'
 
