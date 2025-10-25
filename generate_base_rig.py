@@ -96,10 +96,10 @@ def setup_poser_figure(objects):
             create_arm_fkik_chains(edit_bones)
             create_leg_fkik_chains(edit_bones)
             create_finger_fkik_chains(edit_bones)
-            create_ik_controls(edit_bones, ['Hand', 'Forearm', 'Shoulder'])
-            create_ik_controls(edit_bones, ['Hand', 'Forearm', 'Shoulder'], '.R')
-            create_ik_controls(edit_bones, ['Foot', 'Shin', 'Thigh'], '.L', 'Knee', -0.625)
-            create_ik_controls(edit_bones, ['Foot', 'Shin', 'Thigh'], '.R', 'Knee', -0.625)
+            create_ik_control_bones(edit_bones, ['Hand', 'Forearm', 'Shoulder'])
+            create_ik_control_bones(edit_bones, ['Hand', 'Forearm', 'Shoulder'], '.R')
+            create_ik_control_bones(edit_bones, ['Foot', 'Shin', 'Thigh'], '.L', 'Knee', -0.625)
+            create_ik_control_bones(edit_bones, ['Foot', 'Shin', 'Thigh'], '.R', 'Knee', -0.625)
             create_properties_bone(edit_bones)
 
             # change bone-roll to Global +Z to prevent issues later on
@@ -135,7 +135,7 @@ def setup_poser_figure(objects):
             #        bpy.ops.object.select_all(action='DESELECT')
 
 
-def create_ik_controls(edit_bones, chain: list[LiteralString], side = '.L', pole_name = 'Elbow', y_axis_position = 0.625):
+def create_ik_control_bones(edit_bones, chain: list[LiteralString], side ='.L', pole_name ='Elbow', y_axis_position = 0.625):
 
     ctrl_prefix = 'CTRL'
     prefix = 'IK'
