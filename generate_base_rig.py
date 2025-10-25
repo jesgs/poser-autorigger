@@ -109,20 +109,20 @@ def setup_poser_figure(objects):
                 'Head'
             ]
 
-            spine_ik_chain = create_fkik_chains(obj.data.edit_bones, spine_ik_bone_chains, 'root', 'IK', '', 'THEME03', 0.004, False)
-            spine_fk_chain = create_fkik_chains(obj.data.edit_bones, spine_ik_bone_chains, 'root', 'FK', '', 'THEME03', 0.002)
+            spine_ik_chain = create_fkik_chains(obj.data.edit_bones, spine_ik_bone_chains, 'root', 'IK', '', 'THEME03', 0.004, False, True)
+            # spine_fk_chain = create_fkik_chains(obj.data.edit_bones, spine_ik_bone_chains, 'root', 'FK', '', 'THEME03', 0.002)
 
             # arm chains
-            arm_ik_chain_left = create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'IK', '.L', 'THEME01', 0.004)
-            arm_ik_chain_right = create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'IK', '.R', 'THEME01', 0.004)
-            arm_fk_chain_left = create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'FK', '.L', 'THEME03', 0.002)
-            arm_fk_chain_right = create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'FK', '.R', 'THEME03', 0.002)
+            # arm_ik_chain_left = create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'IK', '.L', 'THEME01', 0.004)
+            # arm_ik_chain_right = create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'IK', '.R', 'THEME01', 0.004)
+            # arm_fk_chain_left = create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'FK', '.L', 'THEME03', 0.002)
+            # arm_fk_chain_right = create_fkik_chains(obj.data.edit_bones, arm_ik_bone_chains, 'DEF-Chest', 'FK', '.R', 'THEME03', 0.002)
 
             # leg chains
-            leg_ik_chain_left = create_fkik_chains(obj.data.edit_bones, leg_ik_bone_chains, 'DEF-Hip', 'IK', '.L', 'THEME01', 0.004)
-            leg_ik_chain_right = create_fkik_chains(obj.data.edit_bones, leg_ik_bone_chains, 'DEF-Hip', 'IK', '.R', 'THEME01', 0.004)
-            leg_fk_chain_left = create_fkik_chains(obj.data.edit_bones, leg_ik_bone_chains, 'DEF-Hip', 'FK', '.L', 'THEME03', 0.002)
-            leg_fk_chain_right = create_fkik_chains(obj.data.edit_bones, leg_ik_bone_chains, 'DEF-Hip', 'FK', '.R', 'THEME03', 0.002)
+            # leg_ik_chain_left = create_fkik_chains(obj.data.edit_bones, leg_ik_bone_chains, 'DEF-Hip', 'IK', '.L', 'THEME01', 0.004)
+            # leg_ik_chain_right = create_fkik_chains(obj.data.edit_bones, leg_ik_bone_chains, 'DEF-Hip', 'IK', '.R', 'THEME01', 0.004)
+            # leg_fk_chain_left = create_fkik_chains(obj.data.edit_bones, leg_ik_bone_chains, 'DEF-Hip', 'FK', '.L', 'THEME03', 0.002)
+            # leg_fk_chain_right = create_fkik_chains(obj.data.edit_bones, leg_ik_bone_chains, 'DEF-Hip', 'FK', '.R', 'THEME03', 0.002)
 
             # change bone-roll to Global +Z to prevent issues later on
             bpy.ops.armature.select_all(action='SELECT')
@@ -166,15 +166,18 @@ def fix_bones(edit_bones):
     edit_bones['Right_Toe'].tail[1] = toe_y - -0.1
 
 
-def create_fkik_chains(edit_bones, bone_chains, parent = '', prefix = 'IK', suffix ='.L', palette = 'THEME01', bone_size = 0.002, create_handle = True):
+def create_fkik_chains(edit_bones, bone_chains, parent = '', prefix = 'IK', suffix ='.L', palette = 'THEME01', bone_size = 0.002, create_handle = True, strict = False):
     fkik_chains = []
     completed_fkik_chains = []
-    for bone in edit_bones:
-        for bc in bone_chains:
+    for bc in bone_chains:
+        for bone in edit_bones:
             if bone.name.find(bc) == -1:
                 continue
 
-            if bone.name.find(suffix) == -1:
+            if suffix != '' and bone.name.find(suffix) == -1:
+                continue
+
+            if strict and ('DEF-' + bc) != bone.name:
                 continue
 
             bone_name = bone.name
