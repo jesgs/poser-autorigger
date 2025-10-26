@@ -183,7 +183,7 @@ def setup_poser_figure(objects):
             add_copy_constraints(armature, 'IK', 'FK')
             add_copy_constraints(armature, 'FK', 'DEF')
             add_ik_constraints(armature, 'CTRL-IK-Hand' , ['Forearm', 'Shoulder'], '.L', 'Elbow', 180)
-            add_ik_constraints(armature, 'CTRL-IK-Foot' , ['Shin', 'Thigh'], '.L', 'Knee', 180)
+            add_ik_constraints(armature, 'IK-Foot' , ['Shin', 'Thigh'], '.L', 'Knee', 180)
             add_ik_constraints(armature, 'CTRL-IK-LowerAbdomen', ['LowerAbdomen', 'Hip'], '', 'Hip', 90)
             add_ik_constraints(armature, 'CTRL-IK-Chest', ['Chest', 'Abdomen'], '', 'Chest', -90)
             add_ik_constraints(armature, 'CTRL-IK-Head', ['Head', 'Neck'], '', 'Neck', 90)
@@ -197,7 +197,38 @@ def setup_poser_figure(objects):
 
 
 def create_foot_roll_control_bones(edit_bones):
-    pass
+    # create and position bones for foot roll mechanism
+    # Bones (Symmetrized):
+    # MCH-Roll-Toe.L (parented to MCH-Foot-Rollback.L)
+    # MCH-Roll-Foot.L (parented to MCH-Foot-Rollback.L)
+    # Roll-Foot.L (parented to CTRL-IK-Foot.L)
+    # MCH-Foot-Rollback.L (parented to Roll-Foot.L)
+    # CTRL-Foot-Roll.L (parented to CTRL-IK-Foot.L
+    #
+
+    bone_ik_toe = edit_bones['IK-Toe.L']
+    bone_ik_foot = edit_bones['IK-Foot.L']
+
+
+    bone_mch_roll_toe = edit_bones.new('MCH-Roll-Toe.L')
+    bone_mch_roll_foot = edit_bones.new('MCH-Roll-Foot.L')
+    bone_roll_foot = edit_bones.new('Roll-Foot.L')
+    bone_mch_foot_rollback = edit_bones.new('MCH-Foot-Rollback.L')
+    bone_ctrl_foot_roll = edit_bones.new('CTRL-Foot-Roll.L')
+    bone_ctrl_ik_foot = edit_bones.new('CTRL-IK-Foot.L')
+
+    # set up parenting
+    bone_ik_toe.parent = bone_mch_roll_toe
+    bone_ik_foot.parent = bone_mch_roll_foot
+    bone_mch_roll_toe.parent = bone_mch_foot_rollback
+    bone_mch_roll_foot.parent = bone_mch_foot_rollback
+    bone_roll_foot.parent = bone_ctrl_ik_foot
+    bone_mch_foot_rollback.parent = bone_roll_foot
+    bone_ctrl_foot_roll.parent = bone_ctrl_ik_foot
+
+    # position bones
+
+
 
 def setup_collar_constraints(armature):
     bones = armature.pose.bones
