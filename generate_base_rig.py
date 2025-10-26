@@ -1,6 +1,7 @@
 from typing import LiteralString
 
 import bpy
+import math
 
 def rename_all_bones(armature, prefix = ''):
     bones = armature.data.edit_bones
@@ -99,10 +100,26 @@ def setup_poser_figure(objects):
             create_arm_fkik_chains(edit_bones)
             create_leg_fkik_chains(edit_bones)
             create_finger_fkik_chains(edit_bones)
-            create_ik_control_bones(edit_bones, ['Hand', 'Forearm', 'Shoulder'])
-            create_ik_control_bones(edit_bones, ['Hand', 'Forearm', 'Shoulder'], '.R')
-            create_ik_control_bones(edit_bones, ['Foot', 'Shin', 'Thigh'], '.L', 'Knee', -0.625)
-            create_ik_control_bones(edit_bones, ['Foot', 'Shin', 'Thigh'], '.R', 'Knee', -0.625)
+            create_ik_control_bones(edit_bones, ['Hand', 'Forearm', 'Shoulder',])
+            create_ik_control_bones(edit_bones, ['Hand', 'Forearm', 'Shoulder',], '.R')
+            create_ik_control_bones(edit_bones, ['Foot', 'Shin', 'Thigh',], '.L', 'Knee', -0.625)
+            create_ik_control_bones(edit_bones, ['Foot', 'Shin', 'Thigh',], '.R', 'Knee', -0.625)
+            create_ik_control_bones(edit_bones, ['LowerAbdomen', 'Hip',], '', 'Hip')
+            create_ik_control_bones(edit_bones, ['Chest', 'Abdomen', ], '', 'Chest')
+            create_ik_control_bones(edit_bones, ['Head', 'Neck',], '', 'Neck')
+
+            # move bone
+            bone_ctrl_ik_lowerabdomen = edit_bones['CTRL-IK-LowerAbdomen']
+            bone_ctrl_ik_lowerabdomen.head = edit_bones['DEF-LowerAbdomen'].tail
+            bone_ctrl_ik_chest = edit_bones['CTRL-IK-Chest']
+            bone_ctrl_ik_chest.head = edit_bones['DEF-Chest'].tail
+            bone_ctrl_ik_head = edit_bones['CTRL-IK-Head']
+            bone_ctrl_ik_head.head = edit_bones['DEF-Head'].tail
+            # bone_ctrl_ik_lowerabdomen.tail
+
+
+
+            create_spine_controls(edit_bones)
             create_properties_bone(edit_bones)
 
             # change bone-roll to Global +Z to prevent issues later on
@@ -123,25 +140,40 @@ def setup_poser_figure(objects):
             add_ik_constraints(armature, 'CTRL-IK-Hand' , ['Forearm', 'Shoulder'], '.R', 'Elbow', 0)
             add_ik_constraints(armature, 'CTRL-IK-Foot' , ['Shin', 'Thigh'], '.L', 'Knee', 180)
             add_ik_constraints(armature, 'CTRL-IK-Foot' , ['Shin', 'Thigh'], '.R', 'Knee', 0)
+            add_ik_constraints(armature, 'CTRL-IK-LowerAbdomen', ['LowerAbdomen', 'Hip'], '', 'Hip', 90)
+            add_ik_constraints(armature, 'CTRL-IK-Chest', ['Chest', 'Abdomen'], '', 'Chest', -90)
+            add_ik_constraints(armature, 'CTRL-IK-Head', ['Head', 'Neck'], '', 'Neck', 90)
 
-            # create IK target controls
-            # if prefix == 'IK' and create_handle:
-            #     print(fkik_chains)
-            #     last = len(fkik_chains) - 1
-            #     last_bone = edit_bones[fkik_chains[last]]
-            #     ik_handle_name = fkik_chains[last].replace(prefix + '-', prefix + '-Target-')
-            #     ik_handle = edit_bones.new(ik_handle_name)
-            #     ik_handle.head = last_bone.head
-            #     ik_handle.tail = last_bone.tail
-            #     ik_handle.bbone_z = ik_handle.bbone_x = bone_size * 2
-            #     ik_handle.length = bone_size * 10
-            #     ik_handle.color.palette = palette
-            #     completed_fkik_chains.append(ik_handle)
-
-            #        bpy.ops.object.select_all(action='DESELECT')
+            # bpy.ops.object.select_all(action='DESELECT')
 
 
-def create_ik_control_bones(edit_bones, chain: list[LiteralString], side ='.L', pole_name ='Elbow', y_axis_position = 0.625):
+def create_spine_controls(edit_bones):
+    # create spine control bones
+    bone_ctrl_torso = edit_bones.new('CTRL-Torso')
+    bone_ctrl_torso.use_deform = False
+    bone_ctrl_torso.head = edit_bones['DEF-Hip'].head
+    bone_ctrl_torso.tail = edit_bones['DEF-LowerAbdomen'].tail
+    bone_ctrl_torso.color.palette = 'THEME09'
+    bone_ctrl_torso.display_type = 'OCTAHEDRAL'
+
+    bone_ctrl_hip = edit_bones.new('CTRL-Hip')
+    bone_ctrl_hip.use_deform = False
+    bone_ctrl_hip.head = edit_bones['DEF-Hip'].head
+    bone_ctrl_hip.tail = edit_bones['DEF-Hip'].tail
+    bone_ctrl_hip.color.palette = 'THEME09'
+    bone_ctrl_hip.display_type = 'OCTAHEDRAL'
+    bone_ctrl_hip.parent = bone_ctrl_torso
+
+    bone_ctrl_chest = edit_bones.new('CTRL-Chest')
+    bone_ctrl_chest.use_deform = False
+    bone_ctrl_chest.head = edit_bones['DEF-Chest'].head
+    bone_ctrl_chest.tail = edit_bones['DEF-Chest'].tail
+    bone_ctrl_chest.color.palette = 'THEME09'
+    bone_ctrl_chest.display_type = 'OCTAHEDRAL'
+    bone_ctrl_chest.parent = bone_ctrl_torso
+
+
+def create_ik_control_bones(edit_bones, chain: list[LiteralString], side ='.L', pole_name = 'Elbow', y_axis_position = 0.625, control_color = 'THEME01', pole_color = 'THEME09'):
 
     ctrl_prefix = 'CTRL'
     prefix = 'IK'
@@ -155,7 +187,7 @@ def create_ik_control_bones(edit_bones, chain: list[LiteralString], side ='.L', 
     ik_control_bone.bbone_x = first_bone.bbone_x * 2
     ik_control_bone.bbone_z = first_bone.bbone_z * 2
     ik_control_bone.length = first_bone.length - 0.01
-    ik_control_bone.color.palette = 'THEME01'
+    ik_control_bone.color.palette = control_color
 
     # create a pole target bone based off second bone in chain, but rotate 90 degrees and move on Y-axis
     ik_pole_bone_name = ctrl_prefix + '-' + prefix + '-Pole-' + pole_name + side
@@ -166,9 +198,12 @@ def create_ik_control_bones(edit_bones, chain: list[LiteralString], side ='.L', 
     ik_pole_bone.tail = ik_pole_position_bone.tail
     ik_pole_bone.bbone_x = ik_pole_position_bone.bbone_x * 2
     ik_pole_bone.bbone_z = ik_pole_position_bone.bbone_z * 2
-    ik_pole_bone.color.palette = 'THEME09'
+    ik_pole_bone.color.palette = pole_color
     ik_pole_bone.tail = [ik_pole_bone.head[0], y_axis_position, ik_pole_bone.head[2]]
     ik_pole_bone.head[1] = y_axis_position - 0.125
+
+    ik_control_bone.use_deform = False
+    ik_pole_bone.use_deform = False
 
 
 def add_ik_constraints(armature, ik_target_name, chain: list[LiteralString], side = '.L', pole_name ='Elbow', pole_angle = 180):
@@ -183,9 +218,10 @@ def add_ik_constraints(armature, ik_target_name, chain: list[LiteralString], sid
     ik_constraint.target = armature
     ik_constraint.subtarget = ik_target_bone.name
     ik_constraint.pole_target = armature
-    ik_constraint.pole_angle = pole_angle
+    ik_constraint.pole_angle = math.radians(pole_angle)
     ik_constraint.pole_subtarget = ik_pole_bone.name
     ik_constraint.chain_count = chain_length
+    ik_constraint.enabled = True
 
 
 def add_copy_constraints(armature, prefix_target, prefix_constraint):
