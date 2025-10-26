@@ -1,8 +1,40 @@
+import sys
 from typing import LiteralString
-from mathutils import Color, Vector
+from mathutils import Matrix, Vector
 import colorsys
 import bpy
 import math
+
+bright_red = {
+    'normal': colorsys.hsv_to_rgb(0.0, 1, 1),
+    'select': colorsys.hsv_to_rgb(0.0, 1, 1),
+    'active': colorsys.hsv_to_rgb(0.0, 0.25, 1),
+}
+
+bright_orange = {
+    'normal': colorsys.hsv_to_rgb(0.0875, 1, 1),
+    'select': colorsys.hsv_to_rgb(0.0875, 1, 1),
+    'active': colorsys.hsv_to_rgb(0.0875, 0.25, 1),
+}
+
+bright_yellow = {
+    'normal': colorsys.hsv_to_rgb(0.167, 1, 1),
+    'select': colorsys.hsv_to_rgb(0.167, 1, 1),
+    'active': colorsys.hsv_to_rgb(0.167, 0.25, 1),
+}
+
+bright_green = {
+    'normal': colorsys.hsv_to_rgb(0.25, 1, 1),
+    'select': colorsys.hsv_to_rgb(0.25, 1, 1),
+    'active': colorsys.hsv_to_rgb(0.25, 0.25, 1),
+}
+
+bright_blue = {
+    'normal': colorsys.hsv_to_rgb(0.625, 1, 1),
+    'select': colorsys.hsv_to_rgb(0.625, 1, 1),
+    'active': colorsys.hsv_to_rgb(0.625, 0.625, 1),
+}
+
 
 def rename_all_bones(armature, prefix = ''):
     bones = armature.data.edit_bones
@@ -39,17 +71,6 @@ def setup_poser_figure(objects):
     bpy.ops.object.select_all(action='DESELECT')
 
     # define some custom colors for certain bones
-    bright_green = {
-        'normal' : colorsys.hsv_to_rgb(0.25, 1, 1),
-        'select': colorsys.hsv_to_rgb(0.25, 1, 1),
-        'active': colorsys.hsv_to_rgb(0.25, 0.25, 1),
-    }
-
-    bright_blue = {
-        'normal' : colorsys.hsv_to_rgb(0.625, 1, 1),
-        'select': colorsys.hsv_to_rgb(0.625, 1, 1),
-        'active': colorsys.hsv_to_rgb(0.625, 0.625, 1),
-    }
 
     for obj in objects:
         bpy.context.view_layer.objects.active = bpy.context.view_layer.objects[obj.name]
@@ -115,12 +136,11 @@ def setup_poser_figure(objects):
             create_leg_fkik_chains(edit_bones)
             create_finger_fkik_chains(edit_bones)
             create_ik_control_bones(edit_bones, ['Hand', 'Forearm', 'Shoulder',])
-            create_ik_control_bones(edit_bones, ['Hand', 'Forearm', 'Shoulder',], '.R')
             create_ik_control_bones(edit_bones, ['Foot', 'Shin', 'Thigh',], '.L', 'Knee', -0.625)
-            create_ik_control_bones(edit_bones, ['Foot', 'Shin', 'Thigh',], '.R', 'Knee', -0.625)
             create_ik_control_bones(edit_bones, ['LowerAbdomen', 'Hip',], '', 'Hip')
             create_ik_control_bones(edit_bones, ['Chest', 'Abdomen', ], '', 'Chest')
             create_ik_control_bones(edit_bones, ['Head', 'Neck',], '', 'Neck')
+            create_mch_shoulder_bones_and_controls(edit_bones)
             create_spine_controls(edit_bones)
 
             # reposition spine IK controls and parent to spine controls
@@ -162,14 +182,97 @@ def setup_poser_figure(objects):
             add_copy_constraints(armature, 'IK', 'FK')
             add_copy_constraints(armature, 'FK', 'DEF')
             add_ik_constraints(armature, 'CTRL-IK-Hand' , ['Forearm', 'Shoulder'], '.L', 'Elbow', 180)
-            add_ik_constraints(armature, 'CTRL-IK-Hand' , ['Forearm', 'Shoulder'], '.R', 'Elbow', 0)
             add_ik_constraints(armature, 'CTRL-IK-Foot' , ['Shin', 'Thigh'], '.L', 'Knee', 180)
-            add_ik_constraints(armature, 'CTRL-IK-Foot' , ['Shin', 'Thigh'], '.R', 'Knee', 0)
             add_ik_constraints(armature, 'CTRL-IK-LowerAbdomen', ['LowerAbdomen', 'Hip'], '', 'Hip', 90)
             add_ik_constraints(armature, 'CTRL-IK-Chest', ['Chest', 'Abdomen'], '', 'Chest', -90)
             add_ik_constraints(armature, 'CTRL-IK-Head', ['Head', 'Neck'], '', 'Neck', 90)
+            setup_collar_constraints(armature)
 
+            bpy.ops.object.editmode_toggle()
+            bpy.ops.armature.select_all(action='SELECT')
+            bpy.ops.armature.symmetrize(direction="POSITIVE_X")
+            bpy.ops.object.posemode_toggle()
             # bpy.ops.object.select_all(action='DESELECT')
+
+def setup_collar_constraints(armature):
+    bones = armature.pose.bones
+
+    bone_ik_ctrl_hand = bones['CTRL-IK-Hand.L']
+    bone_ik_collar = bones['IK-Collar.L']
+    bone_mch_collar = bones['MCH-Collar.L']
+    bone_mch_collar__damped_track = bones['MCH-Collar-DampedTrack.L']
+    bone_mch_collar__target = bones['MCH-Collar-Target.L']
+
+    # add Copy Rotations constraint to MCH-Collar from MCH-Collar-DampedTrack
+    mch_collar_copy_rotation_constraint = bone_mch_collar.constraints.new('COPY_ROTATION')
+    mch_collar_copy_rotation_constraint.target = armature
+    mch_collar_copy_rotation_constraint.subtarget = bone_mch_collar__damped_track.name
+
+    # add Damped Track constraint to MCH-Collar-DampedTrack
+    mch_collar__damped_track_constraint = bone_mch_collar__damped_track.constraints.new('DAMPED_TRACK')
+    mch_collar__damped_track_constraint.target = armature
+    mch_collar__damped_track_constraint.subtarget = bone_mch_collar__target.name
+    mch_collar__damped_track_constraint.track_axis = 'TRACK_Y'
+
+
+
+def create_mch_shoulder_bones_and_controls(edit_bones):
+    # what we need:
+    # IK-Collar (both sides)
+    # X/Y axis of Hand tail
+    # grab existing bones for coordinates and alignment
+    bpy.ops.armature.select_all(action='DESELECT')
+    bone_ik_collar_bone = edit_bones['IK-Collar.L']
+    bone_ik_hand_bone = edit_bones['IK-Hand.L']
+    bone_ik_ctrl_hand = edit_bones['CTRL-IK-Hand.L']
+
+    # create new bones
+    bone_mch_collar_bone = edit_bones.new('MCH-Collar.L')
+    bone_mch_collar_bone.display_type = 'OCTAHEDRAL'
+    assign_custom_color(bone_mch_collar_bone, bright_orange)
+    bone_mch_collar_bone.select = True
+
+    bone_mch_collar__damped_track = edit_bones.new('MCH-Collar-DampedTrack.L')
+    bone_mch_collar__damped_track.display_type = 'STICK'
+    assign_custom_color(bone_mch_collar__damped_track, bright_yellow)
+    bone_mch_collar__damped_track.select = True
+
+    bone_mch_collar__target = edit_bones.new('MCH-Collar-Target.L')
+    bone_mch_collar__target.display_type = 'OCTAHEDRAL'
+    assign_custom_color(bone_mch_collar__target, bright_orange)
+    bone_mch_collar__target.select = True
+
+    edit_bones.active = bone_mch_collar__target
+
+    # move the MCH bone to match the current IK bone
+    bone_mch_collar_bone.head = bone_ik_collar_bone.head
+    bone_mch_collar_bone.tail = bone_ik_collar_bone.tail
+    bone_mch_collar__damped_track.head = bone_ik_collar_bone.head
+    bone_mch_collar__damped_track.tail = bone_ik_hand_bone.head
+    bone_mch_collar__target.head = bone_mch_collar__damped_track.tail
+
+    # align damped track bone to collar bone
+    align_bone_to_source(bone_mch_collar__damped_track, bone_ik_collar_bone)
+
+    bone_mch_collar__target.head = bone_mch_collar__damped_track.tail
+    bone_mch_collar__target.tail = [bone_mch_collar__damped_track.tail[0], 0.1, bone_mch_collar__damped_track.tail[2]]
+
+    bone_ik_collar_bone.parent = bone_mch_collar_bone
+
+    # align target bone to ik control
+    align_bone_to_source(bone_mch_collar__target, bone_ik_ctrl_hand)
+
+
+
+def align_bone_to_source(source_bone, target_bone):
+    target_dir = target_bone.tail - target_bone.head
+    source_dir = source_bone.tail - source_bone.head
+
+    rotation_q = source_dir.rotation_difference(target_dir)
+
+    location, rotation, scale = source_bone.matrix.decompose()
+    new_rotation = rotation_q @ rotation
+    source_bone.matrix = Matrix.LocRotScale(location, new_rotation, scale)
 
 
 def assign_custom_color(bone, color: dict[str, tuple[float, float, float]]):
@@ -234,8 +337,7 @@ def create_ik_control_bones(edit_bones, chain: list[LiteralString], side ='.L', 
     ik_pole_bone.tail = [ik_pole_bone.head[0], y_axis_position, ik_pole_bone.head[2]]
     ik_pole_bone.head[1] = y_axis_position - 0.125
 
-    ik_control_bone.use_deform = False
-    ik_pole_bone.use_deform = False
+    ik_pole_bone.parent = ik_control_bone
 
 
 def add_ik_constraints(armature, ik_target_name, chain: list[LiteralString], side = '.L', pole_name ='Elbow', pole_angle = 180):
