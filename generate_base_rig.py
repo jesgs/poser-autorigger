@@ -194,6 +194,7 @@ def setup_poser_figure(objects):
             bpy.ops.object.posemode_toggle()
             # bpy.ops.object.select_all(action='DESELECT')
 
+
 def setup_collar_constraints(armature):
     bones = armature.pose.bones
 
@@ -214,7 +215,55 @@ def setup_collar_constraints(armature):
     mch_collar__damped_track_constraint.subtarget = bone_mch_collar__target.name
     mch_collar__damped_track_constraint.track_axis = 'TRACK_Y'
 
+    # add Copy Location constraints to bone_mch_collar__target from bone_ik_ctrl_hand
+    # these constraints will need drivers assigned to determine influence amount when moving the
+    # IK control
+    add_copylocation_constraint(
+        pose_bone=bone_mch_collar__target,
+        target_bone=bone_ik_ctrl_hand,
+        target_object=armature,
+        name='Copy Location (+Z)',
+        use_y=False
+    )
 
+    add_copylocation_constraint(
+        pose_bone=bone_mch_collar__target,
+        target_bone=bone_ik_ctrl_hand,
+        target_object=armature,
+        name='Copy Location (-Z)',
+        use_y=False,
+        influence=0.0
+    )
+
+    add_copylocation_constraint(
+        pose_bone=bone_mch_collar__target,
+        target_bone=bone_ik_ctrl_hand,
+        target_object=armature,
+        name='Copy Location (+/-Y)',
+        use_x=False,
+        use_y=True,
+        use_z=False,
+        owner_space='WORLD',
+        target_space='WORLD'
+    )
+
+
+def add_copylocation_constraint(pose_bone, target_bone, target_object, name = 'Copy Location', use_x = True, use_y = True, use_z = True, invert_x = False, invert_y = False, invert_z = False, use_offset = False, head_tail = 0.0, owner_space='LOCAL', target_space='LOCAL', influence = 1.0):
+    cl = pose_bone.constraints.new('COPY_LOCATION')
+    cl.name = name
+    cl.target = target_object
+    cl.subtarget = target_bone.name
+    cl.use_x = use_x
+    cl.use_y = use_y
+    cl.use_z = use_z
+    cl.invert_x = invert_x
+    cl.invert_y = invert_y
+    cl.invert_z = invert_z
+    cl.use_offset = use_offset
+    cl.head_tail = head_tail
+    cl.owner_space = owner_space
+    cl.target_space = target_space
+    cl.influence = influence
 
 def create_mch_shoulder_bones_and_controls(edit_bones):
     # what we need:
@@ -261,7 +310,6 @@ def create_mch_shoulder_bones_and_controls(edit_bones):
 
     # align target bone to ik control
     align_bone_to_source(bone_mch_collar__target, bone_ik_ctrl_hand)
-
 
 
 def align_bone_to_source(source_bone, target_bone):
