@@ -4,6 +4,8 @@ An autorigger for Poser characters imported as FBX files.
 
 This auto-rigging tool is geared specifically towards FBX imported figures that already have an existing base armature. This tool takes that existing armature and automates the setup of IK/FK chains, bone collections, and bone widgets.
 
+**Under development—Use at your own risk**
+
 ## **Workflow Summary**
 
 1. User imports their FBX Poser character to Blender.
