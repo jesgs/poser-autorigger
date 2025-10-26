@@ -1,5 +1,6 @@
 from typing import LiteralString
-
+from mathutils import Color, Vector
+import colorsys
 import bpy
 import math
 
@@ -36,6 +37,19 @@ def setup_poser_figure(objects):
     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 
     bpy.ops.object.select_all(action='DESELECT')
+
+    # define some custom colors for certain bones
+    bright_green = {
+        'normal' : colorsys.hsv_to_rgb(0.25, 1, 1),
+        'select': colorsys.hsv_to_rgb(0.25, 1, 1),
+        'active': colorsys.hsv_to_rgb(0.25, 0.25, 1),
+    }
+
+    bright_blue = {
+        'normal' : colorsys.hsv_to_rgb(0.625, 1, 1),
+        'select': colorsys.hsv_to_rgb(0.625, 1, 1),
+        'active': colorsys.hsv_to_rgb(0.625, 0.625, 1),
+    }
 
     for obj in objects:
         bpy.context.view_layer.objects.active = bpy.context.view_layer.objects[obj.name]
@@ -107,19 +121,30 @@ def setup_poser_figure(objects):
             create_ik_control_bones(edit_bones, ['LowerAbdomen', 'Hip',], '', 'Hip')
             create_ik_control_bones(edit_bones, ['Chest', 'Abdomen', ], '', 'Chest')
             create_ik_control_bones(edit_bones, ['Head', 'Neck',], '', 'Neck')
+            create_spine_controls(edit_bones)
 
-            # move bone
+            # reposition spine IK controls and parent to spine controls
             bone_ctrl_ik_lowerabdomen = edit_bones['CTRL-IK-LowerAbdomen']
             bone_ctrl_ik_lowerabdomen.head = edit_bones['DEF-LowerAbdomen'].tail
+            bone_ctrl_ik_lowerabdomen.parent = edit_bones['CTRL-Hip']
+            assign_custom_color(bone_ctrl_ik_lowerabdomen, bright_green)
+
             bone_ctrl_ik_chest = edit_bones['CTRL-IK-Chest']
             bone_ctrl_ik_chest.head = edit_bones['DEF-Chest'].tail
+            bone_ctrl_ik_chest.parent = edit_bones['CTRL-Chest']
+            assign_custom_color(bone_ctrl_ik_chest, bright_green)
+
             bone_ctrl_ik_head = edit_bones['CTRL-IK-Head']
             bone_ctrl_ik_head.head = edit_bones['DEF-Head'].tail
-            # bone_ctrl_ik_lowerabdomen.tail
+            bone_ctrl_ik_head.parent = edit_bones['CTRL-Chest']
+            bone_ctrl_ik_head.color.palette = 'CUSTOM'
+            assign_custom_color(bone_ctrl_ik_head, bright_green)
 
+            # spine pole bone colors
+            assign_custom_color(edit_bones['CTRL-IK-Pole-Hip'], bright_blue)
+            assign_custom_color(edit_bones['CTRL-IK-Pole-Chest'], bright_blue)
+            assign_custom_color(edit_bones['CTRL-IK-Pole-Neck'], bright_blue)
 
-
-            create_spine_controls(edit_bones)
             create_properties_bone(edit_bones)
 
             # change bone-roll to Global +Z to prevent issues later on
@@ -145,6 +170,13 @@ def setup_poser_figure(objects):
             add_ik_constraints(armature, 'CTRL-IK-Head', ['Head', 'Neck'], '', 'Neck', 90)
 
             # bpy.ops.object.select_all(action='DESELECT')
+
+
+def assign_custom_color(bone, color: dict[str, tuple[float, float, float]]):
+    bone.color.palette = 'CUSTOM'
+    bone.color.custom.normal = color['normal']
+    bone.color.custom.select = color['select']
+    bone.color.custom.active = color['active']
 
 
 def create_spine_controls(edit_bones):
