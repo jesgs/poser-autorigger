@@ -141,7 +141,8 @@ def setup_poser_figure(objects):
             create_ik_control_bones(edit_bones, ['Chest', 'Abdomen', ], '', 'Chest')
             create_ik_control_bones(edit_bones, ['Head', 'Neck',], '', 'Neck')
             create_mch_shoulder_bones_and_controls(edit_bones)
-            create_spine_controls(edit_bones)
+            create_spine_control_bones(edit_bones)
+            create_foot_roll_control_bones(edit_bones)
 
             # reposition spine IK controls and parent to spine controls
             bone_ctrl_ik_lowerabdomen = edit_bones['CTRL-IK-LowerAbdomen']
@@ -194,6 +195,9 @@ def setup_poser_figure(objects):
             bpy.ops.object.posemode_toggle()
             # bpy.ops.object.select_all(action='DESELECT')
 
+
+def create_foot_roll_control_bones(edit_bones):
+    pass
 
 def setup_collar_constraints(armature):
     bones = armature.pose.bones
@@ -330,7 +334,7 @@ def assign_custom_color(bone, color: dict[str, tuple[float, float, float]]):
     bone.color.custom.active = color['active']
 
 
-def create_spine_controls(edit_bones):
+def create_spine_control_bones(edit_bones):
     # create spine control bones
     bone_ctrl_torso = edit_bones.new('CTRL-Torso')
     bone_ctrl_torso.use_deform = False
