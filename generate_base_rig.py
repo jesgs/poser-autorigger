@@ -92,6 +92,9 @@ def setup_poser_figure(objects):
             #create_pelvis_bones()
             rename_all_bones(armature, 'DEF-')
 
+            bpy.ops.armature.select_all(action='SELECT')
+            bpy.ops.armature.calculate_roll(type='GLOBAL_POS_Z')
+
             create_spine_fkik_chains(edit_bones)
             create_arm_fkik_chains(edit_bones)
             create_leg_fkik_chains(edit_bones)
@@ -116,7 +119,10 @@ def setup_poser_figure(objects):
             # add constraints
             add_copy_constraints(armature, 'IK', 'FK')
             add_copy_constraints(armature, 'FK', 'DEF')
-            add_ik_constraints(armature)
+            add_ik_constraints(armature, 'CTRL-IK-Hand' , ['Forearm', 'Shoulder'], '.L', 'Elbow', 180)
+            add_ik_constraints(armature, 'CTRL-IK-Hand' , ['Forearm', 'Shoulder'], '.R', 'Elbow', 0)
+            add_ik_constraints(armature, 'CTRL-IK-Foot' , ['Shin', 'Thigh'], '.L', 'Knee', 180)
+            add_ik_constraints(armature, 'CTRL-IK-Foot' , ['Shin', 'Thigh'], '.R', 'Knee', 0)
 
             # create IK target controls
             # if prefix == 'IK' and create_handle:
@@ -161,16 +167,29 @@ def create_ik_control_bones(edit_bones, chain: list[LiteralString], side ='.L', 
     ik_pole_bone.bbone_x = ik_pole_position_bone.bbone_x * 2
     ik_pole_bone.bbone_z = ik_pole_position_bone.bbone_z * 2
     ik_pole_bone.color.palette = 'THEME09'
-    ik_pole_bone.tail = [ ik_pole_bone.head[0], y_axis_position, ik_pole_bone.head[2]]
+    ik_pole_bone.tail = [ik_pole_bone.head[0], y_axis_position, ik_pole_bone.head[2]]
     ik_pole_bone.head[1] = y_axis_position - 0.125
 
 
-def add_ik_constraints(armature):
-    pass
+def add_ik_constraints(armature, ik_target_name, chain: list[LiteralString], side = '.L', pole_name ='Elbow', pole_angle = 180):
+    bones = armature.pose.bones
+    chain_length = len(chain)
+    ik_target_bone = bones.get(ik_target_name + side)
+    ik_pole_bone = bones.get('CTRL-IK-Pole-' + pole_name + side)
+
+    ik_constraint_bone_name = 'IK-' + chain[0] + side
+
+    ik_constraint = bones[ik_constraint_bone_name].constraints.new('IK')
+    ik_constraint.target = armature
+    ik_constraint.subtarget = ik_target_bone.name
+    ik_constraint.pole_target = armature
+    ik_constraint.pole_angle = pole_angle
+    ik_constraint.pole_subtarget = ik_pole_bone.name
+    ik_constraint.chain_count = chain_length
 
 
-def add_copy_constraints(obj, prefix_target, prefix_constraint):
-    bones = obj.pose.bones
+def add_copy_constraints(armature, prefix_target, prefix_constraint):
+    bones = armature.pose.bones
 
     for bone in bones:
         if not bone.name.startswith(prefix_target):
@@ -184,7 +203,7 @@ def add_copy_constraints(obj, prefix_target, prefix_constraint):
         constraint = bones[constraint_bone_name].constraints.new('COPY_TRANSFORMS')
         default_constraint_name = constraint.name
         constraint.name = default_constraint_name + ' ' + bone.name
-        constraint.target = obj
+        constraint.target = armature
         constraint.subtarget = bone.name
 
 
