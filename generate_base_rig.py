@@ -198,15 +198,11 @@ def setup_poser_figure(objects):
 
 def setup_foot_roll_constraints(armature):
     pose_bones = armature.pose.bones
-    bone_ik_toe = pose_bones['IK-Toe.L']
-    bone_ik_foot = pose_bones['IK-Foot.L']
-    bone_ctrl_ik_foot = pose_bones['CTRL-IK-Foot.L']
 
     bone_mch_roll_toe = pose_bones['MCH-Roll-Toe.L']
     bone_mch_roll_foot = pose_bones['MCH-Roll-Foot.L']
-    bone_roll_foot = pose_bones['Roll-Foot.L']
-    bone_mch_foot_rollback = pose_bones['MCH-Foot-Rollback.L']
     bone_ctrl_foot_roll = pose_bones['CTRL-Foot-Roll.L']
+    bone_ctrl_foot_roll.lock_rotation = [False, True, True]
 
     # add_transformation_constraint()
     add_copylocation_constraint(
@@ -244,6 +240,13 @@ def setup_foot_roll_constraints(armature):
         map_to='ROTATION',
         to_min_x_rot=0.0,
         to_max_x_rot=90.0
+    )
+
+    add_limitrotation_constraint(
+        pose_bone=bone_ctrl_foot_roll,
+        use_limit_x=True,
+        min_x=0.0,
+        max_x=math.radians(179.0)
     )
 
 
@@ -379,8 +382,27 @@ def add_copylocation_constraint(pose_bone, target_bone, target_object, name = 'C
     cl.target_space = target_space
     cl.influence = influence
 
-def add_limitrotation_constraint(pose_bone, target_bone):
+
+def add_limitrotation_constraint(pose_bone, euler_order='AUTO',
+                                 max_x=0.0, max_y=0.0, max_z=0.0,
+                                 min_x=0.0, min_y=0.0, min_z=0.0,
+                                 use_limit_x=False, use_limit_y=False, use_limit_z=False,
+                                 owner_space='LOCAL', target_space='LOCAL', influence = 1.0
+                                 ):
     lr = pose_bone.constraints.new('LIMIT_ROTATION')
+    lr.euler_order = euler_order
+    lr.max_x = max_x
+    lr.max_y = max_y
+    lr.max_z = max_z
+    lr.min_x = min_x
+    lr.min_y = min_y
+    lr.min_z = min_z
+    lr.use_limit_x = use_limit_x
+    lr.use_limit_y = use_limit_y
+    lr.use_limit_z = use_limit_z
+    lr.owner_space = owner_space
+    lr.target_space = target_space
+    lr.influence = influence
 
 def add_copyrotation_constraint(pose_bone, target_bone, target_object,
                                 invert_x, invert_y, invert_z, mix_mode, use_offset,
