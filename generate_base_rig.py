@@ -187,12 +187,44 @@ def setup_poser_figure(objects):
             add_ik_constraints(armature, 'CTRL-IK-Head', ['Head', 'Neck'], '', 'Neck', 90)
             setup_collar_constraints(armature)
             setup_foot_roll_constraints(armature)
+            setup_eye_tracking_constraints(armature)
 
             bpy.ops.object.editmode_toggle()
             bpy.ops.armature.select_all(action='SELECT')
             bpy.ops.armature.symmetrize(direction="POSITIVE_X")
             bpy.ops.object.posemode_toggle()
             # bpy.ops.object.select_all(action='DESELECT')
+
+
+def setup_eye_tracking_constraints(armature):
+    pose_bones = armature.pose.bones
+    # assign copy constraint from MCH-Eye.L to DEF-Eye.L
+    bone_mch_eye_left = pose_bones['MCH-Eye.L']
+    bone_eye_left = pose_bones['DEF-Eye.L']
+    bone_ctrl_eye_target_left = pose_bones['CTRL-Eye_Target.L']
+
+    add_copyrotation_constraint(
+        pose_bone=bone_eye_left,
+        target_bone=bone_mch_eye_left,
+        target_object=armature,
+        owner_space='WORLD',
+        target_space='WORLD',
+    )
+
+    add_damped_track_constraint(
+        pose_bone=bone_mch_eye_left,
+        target_bone=bone_ctrl_eye_target_left.name,
+        target_object=armature,
+        track_axis='TRACK_Y'
+    )
+
+
+def add_damped_track_constraint(pose_bone, target_bone, target_object, head_tail=0.0, track_axis='TRACK_X'):
+    dt = pose_bone.constraints.new('DAMPED_TRACK')
+    dt.subtarget = target_bone
+    dt.target = target_object
+    dt.head_tail = head_tail
+    dt.track_axis = track_axis
 
 
 def create_eye_control_bones(edit_bones):
@@ -214,6 +246,10 @@ def create_eye_control_bones(edit_bones):
     bone_ctrl_eye_target.tail = [0, -0.27, bone_eye_left.head[2]]
     bone_ctrl_eye_target_left.head = [bone_eye_left.head[0], -0.25, bone_eye_left.head[2]]
     bone_ctrl_eye_target_left.tail = [bone_eye_left.head[0], -0.27, bone_eye_left.head[2]]
+
+    # assign colors
+    assign_custom_color(bone_ctrl_eye_target, bright_blue)
+    assign_custom_color(bone_ctrl_eye_target_left, bright_yellow)
 
 
 def setup_foot_roll_constraints(armature):
@@ -270,6 +306,20 @@ def setup_foot_roll_constraints(armature):
     )
 
 
+def create_bone(edit_bones, name, head=0.0, tail=0.0, parent=None, display_type='ARMATURE_DEFINED', use_deform=False, use_parent=False, custom_color=None):
+    new_bone = edit_bones.new(name)
+    new_bone.head = head
+    new_bone.tail = tail
+    new_bone.parent = parent
+    new_bone.use_deform = use_deform
+    new_bone.use_parent = use_parent
+    new_bone.display_type = display_type
+
+    if custom_color is not None:
+        assign_custom_color(new_bone, custom_color)
+
+    return new_bone
+
 def create_foot_roll_control_bones(edit_bones):
     # create and position bones for foot roll mechanism
     # Bones (Symmetrized):
@@ -284,6 +334,7 @@ def create_foot_roll_control_bones(edit_bones):
     bone_ctrl_ik_foot = edit_bones['CTRL-IK-Foot.L']
 
     bone_mch_roll_toe = edit_bones.new('MCH-Roll-Toe.L')
+
     bone_mch_roll_foot = edit_bones.new('MCH-Roll-Foot.L')
     bone_roll_foot = edit_bones.new('Roll-Foot.L')
     bone_mch_foot_rollback = edit_bones.new('MCH-Foot-Rollback.L')
@@ -333,6 +384,7 @@ def create_foot_roll_control_bones(edit_bones):
 
 
 def setup_collar_constraints(armature):
+    # todo: refactor to use new method for adding damped track constraints
     bones = armature.pose.bones
 
     bone_ik_ctrl_hand = bones['CTRL-IK-Hand.L']
@@ -425,11 +477,28 @@ def add_limitrotation_constraint(pose_bone, euler_order='AUTO',
     lr.influence = influence
 
 def add_copyrotation_constraint(pose_bone, target_bone, target_object,
-                                invert_x, invert_y, invert_z, mix_mode, use_offset,
-                                use_x, use_y, use_z, influence = 1.0):
+                                name = 'Copy Rotation',
+                                use_x = True, use_y = True, use_z = True,
+                                invert_x = False, invert_y = False, invert_z = False,
+                                mix_mode = 'REPLACE', use_offset = False, euler_order='AUTO',
+                                owner_space='LOCAL', target_space='LOCAL',
+                                influence = 1.0):
     cr = pose_bone.constraints.new('COPY_ROTATION')
-
-    pass
+    cr.name = name
+    cr.target = target_object
+    cr.subtarget = target_bone.name
+    cr.use_x = use_x
+    cr.use_y = use_y
+    cr.use_z = use_z
+    cr.invert_x = invert_x
+    cr.invert_y = invert_y
+    cr.invert_z = invert_z
+    cr.mix_mode = mix_mode
+    cr.use_offset = use_offset
+    cr.euler_order = euler_order
+    cr.owner_space = owner_space
+    cr.target_space = target_space
+    cr.influence = influence
 
 
 def add_transformation_constraint(pose_bone, target_bone, target_object,
