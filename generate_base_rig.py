@@ -207,6 +207,14 @@ def create_eye_control_bones(edit_bones):
     bone_mch_eye_left.tail = [bone_eye_left.tail[0], bone_eye_left.tail[1] + 0.005, bone_eye_left.tail[2]]
     bone_mch_eye_left.bbone_x = bone_mch_eye_left.bbone_z = bone_eye_left.bbone_z * 2
 
+    bone_ctrl_eye_target.bbone_x = bone_ctrl_eye_target.bbone_z = bone_eye_left.bbone_z
+    bone_ctrl_eye_target_left.bbone_x = bone_ctrl_eye_target_left.bbone_z = bone_eye_left.bbone_z
+
+    bone_ctrl_eye_target.head = [0, -0.25, bone_eye_left.head[2]]
+    bone_ctrl_eye_target.tail = [0, -0.27, bone_eye_left.head[2]]
+    bone_ctrl_eye_target_left.head = [bone_eye_left.head[0], -0.25, bone_eye_left.head[2]]
+    bone_ctrl_eye_target_left.tail = [bone_eye_left.head[0], -0.27, bone_eye_left.head[2]]
+
 
 def setup_foot_roll_constraints(armature):
     pose_bones = armature.pose.bones
