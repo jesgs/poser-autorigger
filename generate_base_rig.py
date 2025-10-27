@@ -1,4 +1,3 @@
-import sys
 from typing import LiteralString
 from mathutils import Matrix, Vector
 import colorsys
@@ -69,8 +68,6 @@ def setup_poser_figure(objects):
     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 
     bpy.ops.object.select_all(action='DESELECT')
-
-    # define some custom colors for certain bones
 
     for obj in objects:
         bpy.context.view_layer.objects.active = bpy.context.view_layer.objects[obj.name]
@@ -143,6 +140,7 @@ def setup_poser_figure(objects):
             create_mch_shoulder_bones_and_controls(edit_bones)
             create_spine_control_bones(edit_bones)
             create_foot_roll_control_bones(edit_bones)
+            create_eye_control_bones(edit_bones)
 
             # reposition spine IK controls and parent to spine controls
             bone_ctrl_ik_lowerabdomen = edit_bones['CTRL-IK-LowerAbdomen']
@@ -195,6 +193,20 @@ def setup_poser_figure(objects):
             bpy.ops.armature.symmetrize(direction="POSITIVE_X")
             bpy.ops.object.posemode_toggle()
             # bpy.ops.object.select_all(action='DESELECT')
+
+
+def create_eye_control_bones(edit_bones):
+    # create main eye track and two eye track bones
+    bone_ctrl_eye_target = edit_bones.new('CTRL-Eye_Target')
+    bone_ctrl_eye_target_left = edit_bones.new('CTRL-Eye_Target.L')
+    bone_mch_eye_left = edit_bones.new('MCH-Eye.L')
+    bone_eye_left = edit_bones['DEF-Eye.L']
+
+    bone_ctrl_eye_target_left.parent = bone_ctrl_eye_target
+    bone_mch_eye_left.head = bone_eye_left.head
+    bone_mch_eye_left.tail = [bone_eye_left.tail[0], bone_eye_left.tail[1] + 0.005, bone_eye_left.tail[2]]
+    bone_mch_eye_left.bbone_x = bone_mch_eye_left.bbone_z = bone_eye_left.bbone_z * 2
+
 
 def setup_foot_roll_constraints(armature):
     pose_bones = armature.pose.bones
