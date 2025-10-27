@@ -188,12 +188,63 @@ def setup_poser_figure(objects):
             add_ik_constraints(armature, 'CTRL-IK-Chest', ['Chest', 'Abdomen'], '', 'Chest', -90)
             add_ik_constraints(armature, 'CTRL-IK-Head', ['Head', 'Neck'], '', 'Neck', 90)
             setup_collar_constraints(armature)
+            setup_foot_roll_constraints(armature)
 
             bpy.ops.object.editmode_toggle()
             bpy.ops.armature.select_all(action='SELECT')
             bpy.ops.armature.symmetrize(direction="POSITIVE_X")
             bpy.ops.object.posemode_toggle()
             # bpy.ops.object.select_all(action='DESELECT')
+
+def setup_foot_roll_constraints(armature):
+    pose_bones = armature.pose.bones
+    bone_ik_toe = pose_bones['IK-Toe.L']
+    bone_ik_foot = pose_bones['IK-Foot.L']
+    bone_ctrl_ik_foot = pose_bones['CTRL-IK-Foot.L']
+
+    bone_mch_roll_toe = pose_bones['MCH-Roll-Toe.L']
+    bone_mch_roll_foot = pose_bones['MCH-Roll-Foot.L']
+    bone_roll_foot = pose_bones['Roll-Foot.L']
+    bone_mch_foot_rollback = pose_bones['MCH-Foot-Rollback.L']
+    bone_ctrl_foot_roll = pose_bones['CTRL-Foot-Roll.L']
+
+    # add_transformation_constraint()
+    add_copylocation_constraint(
+        pose_bone=bone_mch_roll_foot,
+        target_bone=bone_mch_roll_toe,
+        target_object=armature,
+        head_tail=1.0,
+        owner_space='WORLD',
+        target_space='WORLD',
+    )
+
+    add_transformation_constraint(
+        pose_bone=bone_mch_roll_toe,
+        target_bone=bone_ctrl_foot_roll,
+        target_object=armature,
+        target_space='LOCAL',
+        owner_space='LOCAL',
+        map_from='ROTATION',
+        from_max_x_rot=181.0,
+        from_min_x_rot=90.0,
+        map_to='ROTATION',
+        to_min_x_rot=0.0,
+        to_max_x_rot=113.0
+    )
+
+    add_transformation_constraint(
+        pose_bone=bone_mch_roll_foot,
+        target_bone=bone_ctrl_foot_roll,
+        target_object=armature,
+        target_space='LOCAL',
+        owner_space='LOCAL',
+        map_from='ROTATION',
+        from_min_x_rot=0.0,
+        from_max_x_rot=90.0,
+        map_to='ROTATION',
+        to_min_x_rot=0.0,
+        to_max_x_rot=90.0
+    )
 
 
 def create_foot_roll_control_bones(edit_bones):
@@ -204,18 +255,29 @@ def create_foot_roll_control_bones(edit_bones):
     # Roll-Foot.L (parented to CTRL-IK-Foot.L)
     # MCH-Foot-Rollback.L (parented to Roll-Foot.L)
     # CTRL-Foot-Roll.L (parented to CTRL-IK-Foot.L
-    #
 
     bone_ik_toe = edit_bones['IK-Toe.L']
     bone_ik_foot = edit_bones['IK-Foot.L']
-
+    bone_ctrl_ik_foot = edit_bones['CTRL-IK-Foot.L']
 
     bone_mch_roll_toe = edit_bones.new('MCH-Roll-Toe.L')
     bone_mch_roll_foot = edit_bones.new('MCH-Roll-Foot.L')
     bone_roll_foot = edit_bones.new('Roll-Foot.L')
     bone_mch_foot_rollback = edit_bones.new('MCH-Foot-Rollback.L')
     bone_ctrl_foot_roll = edit_bones.new('CTRL-Foot-Roll.L')
-    bone_ctrl_ik_foot = edit_bones.new('CTRL-IK-Foot.L')
+
+    # assign colors
+    assign_custom_color(bone_mch_roll_toe, bright_blue)
+    assign_custom_color(bone_mch_roll_foot, bright_blue)
+    assign_custom_color(bone_mch_foot_rollback, bright_blue)
+    assign_custom_color(bone_ctrl_foot_roll, bright_blue)
+
+    bone_mch_roll_toe.display_type = 'OCTAHEDRAL'
+    bone_mch_roll_foot.display_type = 'OCTAHEDRAL'
+    bone_roll_foot.display_type = 'OCTAHEDRAL'
+    bone_mch_foot_rollback.display_type = 'OCTAHEDRAL'
+    bone_ctrl_foot_roll.display_type = 'OCTAHEDRAL'
+    bone_ctrl_ik_foot.display_type = 'OCTAHEDRAL'
 
     # set up parenting
     bone_ik_toe.parent = bone_mch_roll_toe
@@ -227,7 +289,24 @@ def create_foot_roll_control_bones(edit_bones):
     bone_ctrl_foot_roll.parent = bone_ctrl_ik_foot
 
     # position bones
+    # position MCH bones for toe and foot but flip them
+    # z-axis of toe head must be 0
+    bone_mch_roll_toe.head = [bone_ik_toe.tail[0], bone_ik_toe.tail[1], 0]
+    bone_mch_roll_toe.tail = bone_ik_toe.head
+    bone_mch_roll_foot.head = bone_ik_foot.tail
+    bone_mch_roll_foot.tail = bone_ik_foot.head
 
+    # position mch-roll-foot.l
+    bone_roll_foot.head = bone_ik_foot.head
+    bone_roll_foot.tail = [bone_ik_foot.head[0], -0.05 , bone_ik_foot.head[2]]
+
+    # position rollback bone
+    bone_mch_foot_rollback.head = [bone_ik_foot.head[0], bone_ik_foot.head[1], 0.025]
+    bone_mch_foot_rollback.tail = [bone_ik_foot.head[0], bone_ik_foot.head[1] - 0.025, 0.025]
+
+    # position roll ctrl bone
+    bone_ctrl_foot_roll.head = [bone_ik_foot.head[0], bone_ik_foot.head[1] + 0.05, bone_ik_foot.head[2]]
+    bone_ctrl_foot_roll.tail = [bone_ik_foot.head[0], bone_ctrl_foot_roll.head[1] + 0.05, bone_ik_foot.head[2]]
 
 
 def setup_collar_constraints(armature):
@@ -299,6 +378,90 @@ def add_copylocation_constraint(pose_bone, target_bone, target_object, name = 'C
     cl.owner_space = owner_space
     cl.target_space = target_space
     cl.influence = influence
+
+def add_limitrotation_constraint(pose_bone, target_bone):
+    lr = pose_bone.constraints.new('LIMIT_ROTATION')
+
+def add_copyrotation_constraint(pose_bone, target_bone, target_object,
+                                invert_x, invert_y, invert_z, mix_mode, use_offset,
+                                use_x, use_y, use_z, influence = 1.0):
+    cr = pose_bone.constraints.new('COPY_ROTATION')
+
+    pass
+
+
+def add_transformation_constraint(pose_bone, target_bone, target_object,
+                                  from_max_x=0.0, from_max_x_rot=0.0, from_max_x_scale=0.0,
+                                  from_max_y=0.0, from_max_y_rot=0.0, from_max_y_scale=0.0,
+                                  from_max_z=0.0, from_max_z_rot=0.0, from_max_z_scale=0.0,
+                                  from_min_x=0.0, from_min_x_rot=0.0, from_min_x_scale=0.0,
+                                  from_min_y=0.0, from_min_y_rot=0.0, from_min_y_scale=0.0,
+                                  from_min_z=0.0, from_min_z_rot=0.0, from_min_z_scale=0.0,
+                                  from_rotation_mode='AUTO', map_from='LOCATION', map_to='LOCATION',
+                                  map_to_x_from='X', map_to_y_from='Y', map_to_z_from='Z',
+                                  mix_mode='ADD', mix_mode_rot='ADD', mix_mode_scale='REPLACE',
+                                  to_max_x=0.0, to_max_x_rot=0.0, to_max_x_scale=0.0,
+                                  to_max_y=0.0, to_max_y_rot=0.0, to_max_y_scale=0.0,
+                                  to_max_z=0.0, to_max_z_rot=0.0, to_max_z_scale=0.0,
+                                  to_min_x=0.0, to_min_x_rot=0.0, to_min_x_scale=0.0,
+                                  to_min_y=0.0, to_min_y_rot=0.0, to_min_y_scale=0.0,
+                                  to_min_z=0.0, to_min_z_rot=0.0, to_min_z_scale=0.0,
+                                  to_euler_order = 'AUTO', name = 'Transformation',
+                                  target_space = 'WORLD', owner_space = 'WORLD'):
+
+    transform = pose_bone.constraints.new('TRANSFORM')
+    transform.name = name
+    transform.target = target_object
+    transform.subtarget = target_bone.name
+    transform.target_space = target_space
+    transform.owner_space = owner_space
+    transform.to_euler_order = to_euler_order
+    transform.from_max_x = from_max_x
+    transform.from_max_y = from_max_y
+    transform.from_max_z = from_max_z
+    transform.from_max_x_rot = math.radians(from_max_x_rot)
+    transform.from_max_y_rot = math.radians(from_max_y_rot)
+    transform.from_max_z_rot = math.radians(from_max_z_rot)
+    transform.from_max_x_scale = from_max_x_scale
+    transform.from_max_y_scale = from_max_y_scale
+    transform.from_max_z_scale = from_max_z_scale
+    transform.from_min_x = from_min_x
+    transform.from_min_y = from_min_y
+    transform.from_min_z = from_min_z
+    transform.from_min_x_rot = math.radians(from_min_x_rot)
+    transform.from_min_y_rot = math.radians(from_min_y_rot)
+    transform.from_min_z_rot = math.radians(from_min_z_rot)
+    transform.from_min_x_scale = from_min_x_scale
+    transform.from_min_y_scale = from_min_y_scale
+    transform.from_min_z_scale = from_min_z_scale
+    transform.from_rotation_mode = from_rotation_mode
+    transform.map_to = map_to
+    transform.map_to_x_from = map_to_x_from
+    transform.map_to_y_from = map_to_y_from
+    transform.map_to_z_from = map_to_z_from
+    transform.map_from = map_from
+    transform.mix_mode = mix_mode
+    transform.mix_mode_rot = mix_mode_rot
+    transform.mix_mode_scale = mix_mode_scale
+    transform.to_max_x = to_max_x
+    transform.to_max_y = to_max_y
+    transform.to_max_z = to_max_z
+    transform.to_max_x_rot = math.radians(to_max_x_rot)
+    transform.to_max_y_rot = math.radians(to_max_y_rot)
+    transform.to_max_z_rot = math.radians(to_max_z_rot)
+    transform.to_max_x_scale = to_max_x_scale
+    transform.to_max_y_scale = to_max_y_scale
+    transform.to_max_z_scale = to_max_z_scale
+    transform.to_min_x = to_min_x
+    transform.to_min_y = to_min_y
+    transform.to_min_z = to_min_z
+    transform.to_min_x_rot = math.radians(to_min_x_rot)
+    transform.to_min_y_rot = math.radians(to_min_y_rot)
+    transform.to_min_z_rot = math.radians(to_min_z_rot)
+    transform.to_min_x_scale = to_min_x_scale
+    transform.to_min_y_scale = to_min_y_scale
+    transform.to_min_z_scale = to_min_z_scale
+
 
 def create_mch_shoulder_bones_and_controls(edit_bones):
     # what we need:
