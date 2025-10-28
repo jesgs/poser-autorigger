@@ -323,7 +323,7 @@ def setup_foot_roll_constraints(armature):
     )
 
 
-def create_bone(edit_bones: ArmatureEditBones, name:str, bbone_size:float=0.001, head:Sequence[float]=0.0, tail:Sequence[float]=0.0, length:float=None, parent:EditBone=None, display_type:Literal["ARMATURE_DEFINED", "OCTAHEDRAL", "STICK", "BBONE", "ENVELOPE", "WIRE"]="ARMATURE_DEFINED", use_deform=False, use_connect=False,
+def create_bone(edit_bones: ArmatureEditBones, name:str, bbone_size:float=0.001, head:Vector|Sequence[float]=0.0, tail:Vector|Sequence[float]=0.0, length:float=None, parent:EditBone=None, display_type:Literal["ARMATURE_DEFINED", "OCTAHEDRAL", "STICK", "BBONE", "ENVELOPE", "WIRE"]="ARMATURE_DEFINED", use_deform=False, use_connect=False,
                 palette:Literal["DEFAULT", "THEME01", "THEME02", "THEME03", "THEME04", "THEME05", "THEME06", "THEME07", "THEME08", "THEME09", "THEME10", "THEME11", "THEME12", "THEME13", "THEME14", "THEME15", "THEME16", "THEME17", "THEME18", "THEME19", "THEME20", "CUSTOM"]='CUSTOM', custom_color: dict[str, tuple[float, float, float]] = None) -> EditBone:
     new_bone = edit_bones.new(name)
     new_bone.head = head
@@ -804,8 +804,8 @@ def create_spine_fkik_chains(edit_bones):
         'Neck',
         'Head'
     ]
-    create_fkik_chains(edit_bones, spine_fkik_bone_chain, 'root', 'IK', '', 'THEME09', 0.004, False, True)
-    create_fkik_chains(edit_bones, spine_fkik_bone_chain, 'root', 'FK', '', 'THEME04', 0.002, False, True)
+    create_fkik_chains(edit_bones, spine_fkik_bone_chain, 'root', 'IK', '', 'THEME09', 0.004)
+    create_fkik_chains(edit_bones, spine_fkik_bone_chain, 'root', 'FK', '', 'THEME04', 0.002)
 
 
 def create_finger_fkik_chains(edit_bones):
@@ -889,7 +889,9 @@ def fix_bones(edit_bones):
     edit_bones['Right_Toe'].tail[1] = toe_y - -0.1
 
 
-def create_fkik_chains(edit_bones, bone_chains, parent = '', prefix = 'IK', suffix ='.L', palette = 'THEME01', bone_size = 0.002, create_handle = True, strict = False):
+def create_fkik_chains(edit_bones: ArmatureEditBones, bone_chains:list[str], parent:str = '', prefix:str = 'IK', suffix:str ='.L',
+                       palette:Literal["DEFAULT", "THEME01", "THEME02", "THEME03", "THEME04", "THEME05", "THEME06", "THEME07", "THEME08", "THEME09", "THEME10", "THEME11", "THEME12", "THEME13", "THEME14", "THEME15", "THEME16", "THEME17", "THEME18", "THEME19", "THEME20", "CUSTOM"] = 'THEME01',
+                       bone_size:float = 0.002) -> list[EditBone]:
     fkik_chains = []
     completed_fkik_chains = []
     for bc in bone_chains:
@@ -906,34 +908,26 @@ def create_fkik_chains(edit_bones, bone_chains, parent = '', prefix = 'IK', suff
             fkik_chains.append(fkik_bone_name)
 
     for i, fkik_chain_item in enumerate(fkik_chains):
-        deform_bone_name = fkik_chain_item.replace(prefix, 'DEF')
-        fkik_bone = edit_bones.new(fkik_chain_item)
-        fkik_bone.use_deform = False
-
-        match_bone_head_coordinates(deform_bone_name, edit_bones, fkik_bone)
-        match_bone_tail_coordinates(deform_bone_name, edit_bones, fkik_bone)
-
-        fkik_bone.bbone_z = fkik_bone.bbone_x = bone_size
-        fkik_bone.color.palette = palette
-        fkik_bone.use_connect = False
-
         # parenting
         if 0 == i:
-            fkik_bone.parent = edit_bones[parent]
+            fkik_bone_parent = edit_bones[parent]
         else:
-            fkik_bone.parent = edit_bones[fkik_chains[i - 1]]
+            fkik_bone_parent = edit_bones[fkik_chains[i - 1]]
+
+        deform_bone_name = fkik_chain_item.replace(prefix, 'DEF')
+        fkik_bone = create_bone(
+            edit_bones=edit_bones,
+            name=fkik_chain_item,
+            parent=fkik_bone_parent,
+            palette=palette,
+            head=edit_bones[deform_bone_name].head,
+            tail=edit_bones[deform_bone_name].tail,
+            bbone_size=bone_size,
+        )
 
         completed_fkik_chains.append(fkik_bone)
 
     return completed_fkik_chains
-
-
-def match_bone_tail_coordinates(deform_bone_name, edit_bones, bone):
-    bone.tail = edit_bones[deform_bone_name].tail
-
-
-def match_bone_head_coordinates(deform_bone_name, edit_bones, bone):
-    bone.head = edit_bones[deform_bone_name].head
 
 
 def create_pelvis_bones():
