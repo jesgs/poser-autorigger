@@ -144,27 +144,7 @@ def setup_poser_figure(objects):
             create_foot_roll_control_bones(edit_bones)
             create_eye_control_bones(edit_bones)
 
-            # reposition spine IK controls and parent to spine controls
-            bone_ctrl_ik_lowerabdomen = edit_bones['CTRL-IK-LowerAbdomen']
-            bone_ctrl_ik_lowerabdomen.head = edit_bones['DEF-LowerAbdomen'].tail
-            bone_ctrl_ik_lowerabdomen.parent = edit_bones['CTRL-Hip']
-            assign_custom_color(bone_ctrl_ik_lowerabdomen, bright_green)
-
-            bone_ctrl_ik_chest = edit_bones['CTRL-IK-Chest']
-            bone_ctrl_ik_chest.head = edit_bones['DEF-Chest'].tail
-            bone_ctrl_ik_chest.parent = edit_bones['CTRL-Chest']
-            assign_custom_color(bone_ctrl_ik_chest, bright_green)
-
-            bone_ctrl_ik_head = edit_bones['CTRL-IK-Head']
-            bone_ctrl_ik_head.head = edit_bones['DEF-Head'].tail
-            bone_ctrl_ik_head.parent = edit_bones['CTRL-Chest']
-            bone_ctrl_ik_head.color.palette = 'CUSTOM'
-            assign_custom_color(bone_ctrl_ik_head, bright_green)
-
-            # spine pole bone colors
-            assign_custom_color(edit_bones['CTRL-IK-Pole-Hip'], bright_blue)
-            assign_custom_color(edit_bones['CTRL-IK-Pole-Chest'], bright_blue)
-            assign_custom_color(edit_bones['CTRL-IK-Pole-Neck'], bright_blue)
+            misc_bone_creation_cleanup(edit_bones)
 
             create_properties_bone(edit_bones)
 
@@ -196,6 +176,30 @@ def setup_poser_figure(objects):
             bpy.ops.armature.symmetrize(direction="POSITIVE_X")
             bpy.ops.object.posemode_toggle()
             # bpy.ops.object.select_all(action='DESELECT')
+
+
+def misc_bone_creation_cleanup(edit_bones: ArmatureEditBones):
+    # reposition spine IK controls and parent to spine controls
+    bone_ctrl_ik_lowerabdomen = edit_bones['CTRL-IK-LowerAbdomen']
+    bone_ctrl_ik_lowerabdomen.head = edit_bones['DEF-LowerAbdomen'].tail
+    bone_ctrl_ik_lowerabdomen.parent = edit_bones['CTRL-Hip']
+    assign_custom_color(bone_ctrl_ik_lowerabdomen, bright_green)
+
+    bone_ctrl_ik_chest = edit_bones['CTRL-IK-Chest']
+    bone_ctrl_ik_chest.head = edit_bones['DEF-Chest'].tail
+    bone_ctrl_ik_chest.parent = edit_bones['CTRL-Chest']
+    assign_custom_color(bone_ctrl_ik_chest, bright_green)
+
+    bone_ctrl_ik_head = edit_bones['CTRL-IK-Head']
+    bone_ctrl_ik_head.head = edit_bones['DEF-Head'].tail
+    bone_ctrl_ik_head.parent = edit_bones['CTRL-Chest']
+    bone_ctrl_ik_head.color.palette = 'CUSTOM'
+    assign_custom_color(bone_ctrl_ik_head, bright_green)
+
+    # spine pole bone colors
+    assign_custom_color(edit_bones['CTRL-IK-Pole-Hip'], bright_blue)
+    assign_custom_color(edit_bones['CTRL-IK-Pole-Chest'], bright_blue)
+    assign_custom_color(edit_bones['CTRL-IK-Pole-Neck'], bright_blue)
 
 
 def setup_eye_tracking_constraints(armature):
