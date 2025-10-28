@@ -1,5 +1,7 @@
-from typing import LiteralString
+from typing import LiteralString, Sequence, Literal
 from mathutils import Matrix, Vector
+from bpy.types import ArmatureEditBones, EditBone
+import mathutils
 import colorsys
 import bpy
 import math
@@ -229,27 +231,38 @@ def add_damped_track_constraint(pose_bone, target_bone, target_object, head_tail
 
 def create_eye_control_bones(edit_bones):
     # create main eye track and two eye track bones
-    bone_ctrl_eye_target = edit_bones.new('CTRL-Eye_Target')
-    bone_ctrl_eye_target_left = edit_bones.new('CTRL-Eye_Target.L')
-    bone_mch_eye_left = edit_bones.new('MCH-Eye.L')
     bone_eye_left = edit_bones['DEF-Eye.L']
 
-    bone_ctrl_eye_target_left.parent = bone_ctrl_eye_target
-    bone_mch_eye_left.head = bone_eye_left.head
-    bone_mch_eye_left.tail = [bone_eye_left.tail[0], bone_eye_left.tail[1] + 0.005, bone_eye_left.tail[2]]
-    bone_mch_eye_left.bbone_x = bone_mch_eye_left.bbone_z = bone_eye_left.bbone_z * 2
+    create_bone(
+        edit_bones=edit_bones,
+        name='MCH-Eye.L',
+        head=bone_eye_left.head,
+        tail=[bone_eye_left.tail[0], bone_eye_left.tail[1] + 0.005, bone_eye_left.tail[2]],
+        use_deform=False,
+        parent=bone_eye_left.parent,
+        bbone_size=bone_eye_left.bbone_z * 2
+    )
 
-    bone_ctrl_eye_target.bbone_x = bone_ctrl_eye_target.bbone_z = bone_eye_left.bbone_z
-    bone_ctrl_eye_target_left.bbone_x = bone_ctrl_eye_target_left.bbone_z = bone_eye_left.bbone_z
+    bone_ctrl_eye_target = create_bone(
+        edit_bones=edit_bones,
+        name='CTRL-Eye_Target',
+        head=[0, -0.25, bone_eye_left.head[2]],
+        tail=[0, -0.27, bone_eye_left.head[2]],
+        use_deform=False,
+        parent=None,
+        bbone_size=bone_eye_left.bbone_x,
+        custom_color=bright_blue
+    )
 
-    bone_ctrl_eye_target.head = [0, -0.25, bone_eye_left.head[2]]
-    bone_ctrl_eye_target.tail = [0, -0.27, bone_eye_left.head[2]]
-    bone_ctrl_eye_target_left.head = [bone_eye_left.head[0], -0.25, bone_eye_left.head[2]]
-    bone_ctrl_eye_target_left.tail = [bone_eye_left.head[0], -0.27, bone_eye_left.head[2]]
-
-    # assign colors
-    assign_custom_color(bone_ctrl_eye_target, bright_blue)
-    assign_custom_color(bone_ctrl_eye_target_left, bright_yellow)
+    create_bone(
+        edit_bones=edit_bones,
+        name='CTRL-Eye_Target.L',
+        parent=bone_ctrl_eye_target,
+        head=[bone_eye_left.head[0], -0.25, bone_eye_left.head[2]],
+        tail=[bone_eye_left.head[0], -0.27, bone_eye_left.head[2]],
+        bbone_size=bone_eye_left.bbone_x,
+        custom_color=bright_yellow
+    )
 
 
 def setup_foot_roll_constraints(armature):
@@ -306,19 +319,27 @@ def setup_foot_roll_constraints(armature):
     )
 
 
-def create_bone(edit_bones, name, head=0.0, tail=0.0, parent=None, display_type='ARMATURE_DEFINED', use_deform=False, use_parent=False, custom_color=None):
+def create_bone(edit_bones: ArmatureEditBones, name:str, bbone_size:float=0.001, head:Sequence[float]=0.0, tail:Sequence[float]=0.0, length:float=None, parent:EditBone=None, display_type:Literal["ARMATURE_DEFINED", "OCTAHEDRAL", "STICK", "BBONE", "ENVELOPE", "WIRE"]="ARMATURE_DEFINED", use_deform=False, use_connect=False,
+                palette:Literal["DEFAULT", "THEME01", "THEME02", "THEME03", "THEME04", "THEME05", "THEME06", "THEME07", "THEME08", "THEME09", "THEME10", "THEME11", "THEME12", "THEME13", "THEME14", "THEME15", "THEME16", "THEME17", "THEME18", "THEME19", "THEME20", "CUSTOM"]='CUSTOM', custom_color: dict[str, tuple[float, float, float]] = None) -> EditBone:
     new_bone = edit_bones.new(name)
     new_bone.head = head
     new_bone.tail = tail
     new_bone.parent = parent
     new_bone.use_deform = use_deform
-    new_bone.use_parent = use_parent
+    new_bone.use_connect = use_connect
     new_bone.display_type = display_type
+    new_bone.bbone_x = new_bone.bbone_z = bbone_size
 
-    if custom_color is not None:
+    if length is not None:
+        new_bone.length = length
+
+    if palette == 'CUSTOM' and custom_color is not None:
         assign_custom_color(new_bone, custom_color)
+    else:
+        new_bone.color.palette = palette
 
     return new_bone
+
 
 def create_foot_roll_control_bones(edit_bones):
     # create and position bones for foot roll mechanism
@@ -333,54 +354,59 @@ def create_foot_roll_control_bones(edit_bones):
     bone_ik_foot = edit_bones['IK-Foot.L']
     bone_ctrl_ik_foot = edit_bones['CTRL-IK-Foot.L']
 
-    bone_mch_roll_toe = edit_bones.new('MCH-Roll-Toe.L')
+    create_bone(
+        edit_bones=edit_bones,
+        name='CTRL-Foot-Roll.L',
+        custom_color=bright_blue,
+        display_type='OCTAHEDRAL',
+        parent=bone_ctrl_ik_foot,
+        head=[bone_ik_foot.head[0], bone_ik_foot.head[1] + 0.05, bone_ik_foot.head[2]],
+        tail=[bone_ik_foot.head[0], bone_ik_foot.head[1] + 0.075, bone_ik_foot.head[2]]
+    )
 
-    bone_mch_roll_foot = edit_bones.new('MCH-Roll-Foot.L')
-    bone_roll_foot = edit_bones.new('Roll-Foot.L')
-    bone_mch_foot_rollback = edit_bones.new('MCH-Foot-Rollback.L')
-    bone_ctrl_foot_roll = edit_bones.new('CTRL-Foot-Roll.L')
+    bone_roll_foot = create_bone(
+        edit_bones=edit_bones,
+        name='Roll-Foot.L',
+        custom_color=bright_blue,
+        display_type='OCTAHEDRAL',
+        parent=bone_ctrl_ik_foot,
+        head=bone_ik_foot.head,
+        tail=[bone_ik_foot.head[0], -0.05 , bone_ik_foot.head[2]],
+    )
 
-    # assign colors
-    assign_custom_color(bone_mch_roll_toe, bright_blue)
-    assign_custom_color(bone_mch_roll_foot, bright_blue)
-    assign_custom_color(bone_mch_foot_rollback, bright_blue)
-    assign_custom_color(bone_ctrl_foot_roll, bright_blue)
+    bone_mch_foot_rollback = create_bone(
+        edit_bones=edit_bones,
+        name='MCH-Foot-Rollback.L',
+        custom_color=bright_blue,
+        display_type='OCTAHEDRAL',
+        parent=bone_roll_foot,
+        head=[bone_ik_foot.head[0], bone_ik_foot.head[1], 0.025],
+        tail=[bone_ik_foot.head[0], bone_ik_foot.head[1] - 0.025, 0.025]
+    )
 
-    bone_mch_roll_toe.display_type = 'OCTAHEDRAL'
-    bone_mch_roll_foot.display_type = 'OCTAHEDRAL'
-    bone_roll_foot.display_type = 'OCTAHEDRAL'
-    bone_mch_foot_rollback.display_type = 'OCTAHEDRAL'
-    bone_ctrl_foot_roll.display_type = 'OCTAHEDRAL'
-    bone_ctrl_ik_foot.display_type = 'OCTAHEDRAL'
+    bone_mch_roll_toe = create_bone(
+        edit_bones=edit_bones,
+        name='MCH-Roll-Toe.L',
+        custom_color=bright_blue,
+        display_type='OCTAHEDRAL',
+        parent=bone_mch_foot_rollback,
+        head=[bone_ik_toe.tail[0], bone_ik_toe.tail[1], 0],
+        tail = bone_ik_toe.head
+    )
 
-    # set up parenting
+    bone_mch_roll_foot = create_bone(
+        edit_bones=edit_bones,
+        name='MCH-Roll-Foot.L',
+        custom_color=bright_blue,
+        display_type='OCTAHEDRAL',
+        parent=bone_mch_foot_rollback,
+        head=bone_ik_foot.tail,
+        tail= bone_ik_foot.head
+    )
+
+    # parent existing bones to new ones
     bone_ik_toe.parent = bone_mch_roll_toe
     bone_ik_foot.parent = bone_mch_roll_foot
-    bone_mch_roll_toe.parent = bone_mch_foot_rollback
-    bone_mch_roll_foot.parent = bone_mch_foot_rollback
-    bone_roll_foot.parent = bone_ctrl_ik_foot
-    bone_mch_foot_rollback.parent = bone_roll_foot
-    bone_ctrl_foot_roll.parent = bone_ctrl_ik_foot
-
-    # position bones
-    # position MCH bones for toe and foot but flip them
-    # z-axis of toe head must be 0
-    bone_mch_roll_toe.head = [bone_ik_toe.tail[0], bone_ik_toe.tail[1], 0]
-    bone_mch_roll_toe.tail = bone_ik_toe.head
-    bone_mch_roll_foot.head = bone_ik_foot.tail
-    bone_mch_roll_foot.tail = bone_ik_foot.head
-
-    # position mch-roll-foot.l
-    bone_roll_foot.head = bone_ik_foot.head
-    bone_roll_foot.tail = [bone_ik_foot.head[0], -0.05 , bone_ik_foot.head[2]]
-
-    # position rollback bone
-    bone_mch_foot_rollback.head = [bone_ik_foot.head[0], bone_ik_foot.head[1], 0.025]
-    bone_mch_foot_rollback.tail = [bone_ik_foot.head[0], bone_ik_foot.head[1] - 0.025, 0.025]
-
-    # position roll ctrl bone
-    bone_ctrl_foot_roll.head = [bone_ik_foot.head[0], bone_ik_foot.head[1] + 0.05, bone_ik_foot.head[2]]
-    bone_ctrl_foot_roll.tail = [bone_ik_foot.head[0], bone_ctrl_foot_roll.head[1] + 0.05, bone_ik_foot.head[2]]
 
 
 def setup_collar_constraints(armature):
@@ -665,39 +691,40 @@ def create_spine_control_bones(edit_bones):
     bone_ctrl_chest.parent = bone_ctrl_torso
 
 
-def create_ik_control_bones(edit_bones, chain: list[LiteralString], side ='.L', pole_name = 'Elbow', y_axis_position = 0.625, control_color = 'THEME01', pole_color = 'THEME09'):
+def create_ik_control_bones(edit_bones, chain: list[LiteralString], side ='.L', pole_name = 'Elbow', y_axis_position = 0.625,
+                            control_color: Literal["DEFAULT", "THEME01", "THEME02", "THEME03", "THEME04", "THEME05", "THEME06", "THEME07", "THEME08", "THEME09", "THEME10", "THEME11", "THEME12", "THEME13", "THEME14", "THEME15", "THEME16", "THEME17", "THEME18", "THEME19", "THEME20", "CUSTOM"] = 'THEME01',
+                            pole_color: Literal["DEFAULT", "THEME01", "THEME02", "THEME03", "THEME04", "THEME05", "THEME06", "THEME07", "THEME08", "THEME09", "THEME10", "THEME11", "THEME12", "THEME13", "THEME14", "THEME15", "THEME16", "THEME17", "THEME18", "THEME19", "THEME20", "CUSTOM"] = 'THEME09'):
 
     ctrl_prefix = 'CTRL'
     prefix = 'IK'
     ik_control_bone_name = ctrl_prefix + '-' + prefix + '-' + chain[0] + side
-    ik_control_bone = edit_bones.new(ik_control_bone_name)
     first_bone = edit_bones[prefix + '-' + chain[0] + side]
-
-    # position control bone to match first bone in chain but change dimensions
-    ik_control_bone.head = first_bone.head
-    ik_control_bone.tail = first_bone.tail
-    ik_control_bone.bbone_x = first_bone.bbone_x * 2
-    ik_control_bone.bbone_z = first_bone.bbone_z * 2
-    ik_control_bone.length = first_bone.length - 0.01
-    ik_control_bone.color.palette = control_color
+    ik_control_bone = create_bone(
+        edit_bones=edit_bones,
+        name=ik_control_bone_name,
+        head=first_bone.head,
+        tail=first_bone.tail,
+        bbone_size=first_bone.bbone_x * 2,
+        palette=control_color,
+        length=first_bone.length - 0.01
+    )
 
     # create a pole target bone based off second bone in chain, but rotate 90 degrees and move on Y-axis
     ik_pole_bone_name = ctrl_prefix + '-' + prefix + '-Pole-' + pole_name + side
     ik_pole_position_bone = edit_bones[prefix + '-' + chain[1] + side]
-
-    ik_pole_bone = edit_bones.new(ik_pole_bone_name)
-    ik_pole_bone.head = ik_pole_position_bone.head
-    ik_pole_bone.tail = ik_pole_position_bone.tail
-    ik_pole_bone.bbone_x = ik_pole_position_bone.bbone_x * 2
-    ik_pole_bone.bbone_z = ik_pole_position_bone.bbone_z * 2
-    ik_pole_bone.color.palette = pole_color
-    ik_pole_bone.tail = [ik_pole_bone.head[0], y_axis_position, ik_pole_bone.head[2]]
-    ik_pole_bone.head[1] = y_axis_position - 0.125
-
-    ik_pole_bone.parent = ik_control_bone
+    create_bone(
+        edit_bones=edit_bones,
+        name=ik_pole_bone_name,
+        head=[ik_pole_position_bone.head[0], y_axis_position - 0.125, ik_pole_position_bone.head[2]],
+        tail=[ik_pole_position_bone.head[0], y_axis_position, ik_pole_position_bone.head[2]],
+        bbone_size=ik_pole_position_bone.bbone_x * 2,
+        parent=ik_control_bone,
+        palette=pole_color,
+    )
 
 
-def add_ik_constraints(armature, ik_target_name, chain: list[LiteralString], side = '.L', pole_name ='Elbow', pole_angle = 180):
+
+def add_ik_constraints(armature, ik_target_name, chain: list[LiteralString], side:str = '.L', pole_name:str ='Elbow', pole_angle:float = 180):
     bones = armature.pose.bones
     chain_length = len(chain)
     ik_target_bone = bones.get(ik_target_name + side)
