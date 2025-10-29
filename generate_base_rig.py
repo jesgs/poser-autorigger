@@ -140,7 +140,7 @@ def setup_poser_figure(objects):
             create_ik_control_bones(edit_bones, ['Foot', 'Shin', 'Thigh',], '.L', 'Knee', -0.625)
             create_ik_control_bones(edit_bones, ['LowerAbdomen', 'Hip',], '', 'Hip')
             create_ik_control_bones(edit_bones, ['Chest', 'Abdomen', ], '', 'Chest')
-            create_ik_control_bones(edit_bones, ['Head', 'Neck',], '', 'Neck')
+            create_ik_control_bones(edit_bones, ['Head', 'Neck',], '', 'Head', 0.5)
             create_mch_shoulder_bones_and_controls(edit_bones)
             create_spine_control_bones(edit_bones)
             create_finger_control_bones(edit_bones)
@@ -169,7 +169,14 @@ def setup_poser_figure(objects):
             add_ik_constraints(armature, 'IK-Foot' , ['Shin', 'Thigh'], '.L', 'Knee', 180)
             add_ik_constraints(armature, 'CTRL-IK-LowerAbdomen', ['LowerAbdomen', 'Hip'], '', 'Hip', 90)
             add_ik_constraints(armature, 'CTRL-IK-Chest', ['Chest', 'Abdomen'], '', 'Chest', -90)
-            add_ik_constraints(armature, 'CTRL-IK-Head', ['Head', 'Neck'], '', 'Neck', 90)
+            add_ik_constraints(armature, 'CTRL-IK-Head', ['Head', 'Neck'], '', 'Head', 90)
+            # fingers
+            # add_ik_constraints(armature, 'IK-Thumb_1', ['Thumb_1'], '.L', None)
+            # add_ik_constraints(armature, 'IK-Thumb_2', ['Thumb_3', 'Thumb_2'], '.L', None)
+            add_ik_constraints(armature, 'CTRL-IK-Index', ['Index_3', 'Index_2', 'Index_1'], '.L', None)
+            add_ik_constraints(armature, 'CTRL-IK-Mid', ['Mid_3', 'Mid_2', 'Mid_1'], '.L', None)
+            add_ik_constraints(armature, 'CTRL-IK-Ring', ['Ring_3', 'Ring_2', 'Ring_1'], '.L', None)
+            add_ik_constraints(armature, 'CTRL-IK-Pinky', ['Pinky_3', 'Pinky_2', 'Pinky_1'], '.L', None)
             setup_collar_constraints(armature)
             setup_foot_roll_constraints(armature)
             setup_eye_tracking_constraints(armature)
@@ -186,35 +193,11 @@ def setup_poser_figure(objects):
 
 def create_finger_control_bones(edit_bones: ArmatureEditBones):
     # eventually, we'll want to "DRY" this out, but this will do for now
-    thumb_fkik_chain = [
-        'Thumb_1',
-        'Thumb_2',
-        'Thumb_3',
-    ]
-    index_fkik_chain = [
-        'Index_1',
-        'Index_2',
-        'Index_3',
-    ]
-    mid_fkik_chain = [
-        'Mid_1',
-        'Mid_2',
-        'Mid_3',
-    ]
-    ring_fkik_chain = [
-        'Ring_1',
-        'Ring_2',
-        'Ring_3',
-    ]
-    pinky_fkik_chain = [
-        'Pinky_1',
-        'Pinky_2',
-        'Pinky_3',
-    ]
-
     # finger/thumb curl bones
     # these are the bones to use for naming and positioning
     ctrl_bones = ['Thumb_1', 'Index_1', 'Mid_1', 'Ring_1', 'Pinky_1']
+    fk_control_parent = edit_bones['FK-Hand.L']
+    ik_control_parent = edit_bones['IK-Hand.L'] # eventually, we'll need a separate parent for the IK controls
     bpy.ops.armature.select_all(action='DESELECT')
     for bone in ctrl_bones:
         name = bone.replace('_1', '')
@@ -228,7 +211,8 @@ def create_finger_control_bones(edit_bones: ArmatureEditBones):
             tail=fk_finger_bone.tail,
             length=0.025,
             bbone_size=fk_finger_bone.bbone_x * 3,
-            palette='THEME09'
+            palette='THEME09',
+            parent=fk_control_parent
         )
         ik_ctrl_bone = create_bone(
             edit_bones=edit_bones,
@@ -237,7 +221,8 @@ def create_finger_control_bones(edit_bones: ArmatureEditBones):
             tail=ik_finger_bone.tail,
             length=0.025,
             bbone_size=fk_finger_bone.bbone_x * 3,
-            palette='THEME09'
+            palette='THEME09',
+            parent=ik_control_parent
         )
 
         move_bone_along_local_axis(fk_ctrl_bone, -0.025)
@@ -290,7 +275,7 @@ def misc_bone_creation_cleanup(edit_bones: ArmatureEditBones):
     # spine pole bone colors
     assign_custom_color(edit_bones['CTRL-IK-Pole-Hip'], bright_blue)
     assign_custom_color(edit_bones['CTRL-IK-Pole-Chest'], bright_blue)
-    assign_custom_color(edit_bones['CTRL-IK-Pole-Neck'], bright_blue)
+    assign_custom_color(edit_bones['CTRL-IK-Pole-Head'], bright_blue)
 
 
 def setup_eye_tracking_constraints(armature):
@@ -760,7 +745,7 @@ def assign_custom_color(bone, color: dict[str, tuple[float, float, float]]):
     bone.color.custom.active = color['active']
 
 
-def create_spine_control_bones(edit_bones):
+def create_spine_control_bones(edit_bones: ArmatureEditBones):
     # create spine control bones
     bone_ctrl_torso = edit_bones.new('CTRL-Torso')
     bone_ctrl_torso.use_deform = False
@@ -786,7 +771,7 @@ def create_spine_control_bones(edit_bones):
     bone_ctrl_chest.parent = bone_ctrl_torso
 
 
-def create_ik_control_bones(edit_bones, chain: list[LiteralString], side ='.L', pole_name = 'Elbow', y_axis_position = 0.625,
+def create_ik_control_bones(edit_bones: ArmatureEditBones, chain: list[LiteralString], side ='.L', pole_name = 'Elbow', y_axis_position = 0.625,
                             control_color: Literal["DEFAULT", "THEME01", "THEME02", "THEME03", "THEME04", "THEME05", "THEME06", "THEME07", "THEME08", "THEME09", "THEME10", "THEME11", "THEME12", "THEME13", "THEME14", "THEME15", "THEME16", "THEME17", "THEME18", "THEME19", "THEME20", "CUSTOM"] = 'THEME01',
                             pole_color: Literal["DEFAULT", "THEME01", "THEME02", "THEME03", "THEME04", "THEME05", "THEME06", "THEME07", "THEME08", "THEME09", "THEME10", "THEME11", "THEME12", "THEME13", "THEME14", "THEME15", "THEME16", "THEME17", "THEME18", "THEME19", "THEME20", "CUSTOM"] = 'THEME09'):
 
@@ -807,11 +792,12 @@ def create_ik_control_bones(edit_bones, chain: list[LiteralString], side ='.L', 
     # create a pole target bone based off second bone in chain, but rotate 90 degrees and move on Y-axis
     ik_pole_bone_name = ctrl_prefix + '-' + prefix + '-Pole-' + pole_name + side
     ik_pole_position_bone = edit_bones[prefix + '-' + chain[1] + side]
+    print(ik_pole_position_bone.name)
     create_bone(
         edit_bones=edit_bones,
         name=ik_pole_bone_name,
-        head=[ik_pole_position_bone.head[0], y_axis_position - 0.125, ik_pole_position_bone.head[2]],
-        tail=[ik_pole_position_bone.head[0], y_axis_position, ik_pole_position_bone.head[2]],
+        head=[ik_pole_position_bone.tail[0], y_axis_position - 0.125, ik_pole_position_bone.tail[2]],
+        tail=[ik_pole_position_bone.tail[0], y_axis_position, ik_pole_position_bone.tail[2]],
         bbone_size=ik_pole_position_bone.bbone_x * 2,
         parent=ik_control_bone,
         palette=pole_color,
@@ -819,21 +805,23 @@ def create_ik_control_bones(edit_bones, chain: list[LiteralString], side ='.L', 
 
 
 
-def add_ik_constraints(armature, ik_target_name, chain: list[LiteralString], side:str = '.L', pole_name:str ='Elbow', pole_angle:float = 180):
+def add_ik_constraints(armature, ik_target_name, chain: list[LiteralString], side:str = '.L', pole_name:str = None, pole_angle:float = 180):
     bones = armature.pose.bones
     chain_length = len(chain)
     ik_target_bone = bones.get(ik_target_name + side)
-    ik_pole_bone = bones.get('CTRL-IK-Pole-' + pole_name + side)
-
     ik_constraint_bone_name = 'IK-' + chain[0] + side
 
     ik_constraint = bones[ik_constraint_bone_name].constraints.new('IK')
     ik_constraint.target = armature
     ik_constraint.subtarget = ik_target_bone.name
-    ik_constraint.pole_target = armature
-    ik_constraint.pole_angle = math.radians(pole_angle)
-    ik_constraint.pole_subtarget = ik_pole_bone.name
     ik_constraint.chain_count = chain_length
+
+    if pole_name is not None:
+        ik_pole_bone = bones.get('CTRL-IK-Pole-' + pole_name + side)
+        ik_constraint.pole_target = armature
+        ik_constraint.pole_angle = math.radians(pole_angle)
+        ik_constraint.pole_subtarget = ik_pole_bone.name
+
     ik_constraint.enabled = True
 
 
