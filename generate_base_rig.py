@@ -70,6 +70,8 @@ def setup_poser_figure(objects):
     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 
     bpy.ops.object.select_all(action='DESELECT')
+    bpy.context.scene.transform_orientation_slots[0].type = 'NORMAL'
+    bpy.context.scene.tool_settings.transform_pivot_point = 'INDIVIDUAL_ORIGINS'
 
     for obj in objects:
         bpy.context.view_layer.objects.active = bpy.context.view_layer.objects[obj.name]
@@ -141,6 +143,7 @@ def setup_poser_figure(objects):
             create_ik_control_bones(edit_bones, ['Head', 'Neck',], '', 'Neck')
             create_mch_shoulder_bones_and_controls(edit_bones)
             create_spine_control_bones(edit_bones)
+            create_finger_control_bones(edit_bones)
             create_foot_roll_control_bones(edit_bones)
             create_eye_control_bones(edit_bones)
 
@@ -176,6 +179,94 @@ def setup_poser_figure(objects):
             bpy.ops.armature.symmetrize(direction="POSITIVE_X")
             bpy.ops.object.posemode_toggle()
             # bpy.ops.object.select_all(action='DESELECT')
+
+    bpy.context.scene.transform_orientation_slots[0].type = 'GLOBAL'
+    bpy.context.scene.tool_settings.transform_pivot_point = 'MEDIAN_POINT'
+
+
+def create_finger_control_bones(edit_bones: ArmatureEditBones):
+    # eventually, we'll want to "DRY" this out, but this will do for now
+    thumb_fkik_chain = [
+        'Thumb_1',
+        'Thumb_2',
+        'Thumb_3',
+    ]
+    index_fkik_chain = [
+        'Index_1',
+        'Index_2',
+        'Index_3',
+    ]
+    mid_fkik_chain = [
+        'Mid_1',
+        'Mid_2',
+        'Mid_3',
+    ]
+    ring_fkik_chain = [
+        'Ring_1',
+        'Ring_2',
+        'Ring_3',
+    ]
+    pinky_fkik_chain = [
+        'Pinky_1',
+        'Pinky_2',
+        'Pinky_3',
+    ]
+
+    # finger/thumb curl bones
+    # these are the bones to use for naming and positioning
+    ctrl_bones = ['Thumb_1', 'Index_1', 'Mid_1', 'Ring_1', 'Pinky_1']
+    bpy.ops.armature.select_all(action='DESELECT')
+    for bone in ctrl_bones:
+        name = bone.replace('_1', '')
+        fk_finger_bone = edit_bones['FK-' + bone + '.L']
+        ik_finger_bone = edit_bones['IK-' + name + '_3.L']
+
+        fk_ctrl_bone = create_bone(
+            edit_bones=edit_bones,
+            name='CTRL-FK-' + name + '.L',
+            head=fk_finger_bone.head,
+            tail=fk_finger_bone.tail,
+            length=0.025,
+            bbone_size=fk_finger_bone.bbone_x * 3,
+            palette='THEME09'
+        )
+        ik_ctrl_bone = create_bone(
+            edit_bones=edit_bones,
+            name='CTRL-IK-' + name + '.L',
+            head=ik_finger_bone.head,
+            tail=ik_finger_bone.tail,
+            length=0.025,
+            bbone_size=fk_finger_bone.bbone_x * 3,
+            palette='THEME09'
+        )
+
+        move_bone_along_local_axis(fk_ctrl_bone, -0.025)
+        move_bone_along_local_axis(ik_ctrl_bone, 0.025)
+        ik_ctrl_bone.head = ik_finger_bone.tail # we want the heads and tails to align
+        ik_ctrl_bone.length = 0.025 # make sure length stays the same, though
+
+    # need to do the same thing for thumb_1, because IKs are a bit different here
+    thumb_bone = edit_bones['IK-Thumb_1.L']
+    ik_thumb_bone = create_bone(
+        edit_bones=edit_bones,
+        name='CTRL-IK-Thumb-Joint.L',
+        head=thumb_bone.tail,
+        tail=thumb_bone.head,
+        length=0.025,
+        bbone_size=0.002,
+        palette='THEME09'
+    )
+    align_bone_to_source(ik_thumb_bone, thumb_bone)
+
+
+def move_bone_along_local_axis(bone: EditBone, distance:float):
+    normal = (bone.tail - bone.head).normalized()
+
+    # Calculate the new head and tail positions
+    translation_vector = normal * distance
+
+    bone.head += translation_vector
+    bone.tail += translation_vector
 
 
 def misc_bone_creation_cleanup(edit_bones: ArmatureEditBones):
@@ -651,7 +742,7 @@ def create_mch_shoulder_bones_and_controls(edit_bones):
     align_bone_to_source(bone_mch_collar__target, bone_ik_ctrl_hand)
 
 
-def align_bone_to_source(source_bone, target_bone):
+def align_bone_to_source(source_bone:EditBone, target_bone:EditBone):
     target_dir = target_bone.tail - target_bone.head
     source_dir = source_bone.tail - source_bone.head
 
@@ -836,17 +927,11 @@ def create_finger_fkik_chains(edit_bones):
         'Pinky_3',
     ]
 
-    create_fkik_chains(edit_bones, thumb_fkik_chain, 'IK-Hand.L', 'IK', '.L', 'THEME01', 0.004)
-    create_fkik_chains(edit_bones, index_fkik_chain, 'IK-Hand.L', 'IK', '.L', 'THEME01', 0.004)
-    create_fkik_chains(edit_bones, mid_fkik_chain, 'IK-Hand.L', 'IK', '.L', 'THEME01', 0.004)
-    create_fkik_chains(edit_bones, ring_fkik_chain, 'IK-Hand.L', 'IK', '.L', 'THEME01', 0.004)
-    create_fkik_chains(edit_bones, pinky_fkik_chain, 'IK-Hand.L', 'IK', '.L', 'THEME01', 0.004)
-
-    create_fkik_chains(edit_bones, thumb_fkik_chain, 'IK-Hand.R', 'IK', '.R', 'THEME01', 0.004)
-    create_fkik_chains(edit_bones, index_fkik_chain, 'IK-Hand.R', 'IK', '.R', 'THEME01', 0.004)
-    create_fkik_chains(edit_bones, mid_fkik_chain, 'IK-Hand.R', 'IK', '.R', 'THEME01', 0.004)
-    create_fkik_chains(edit_bones, ring_fkik_chain, 'IK-Hand.R', 'IK', '.R', 'THEME01', 0.004)
-    create_fkik_chains(edit_bones, pinky_fkik_chain, 'IK-Hand.R', 'IK', '.R', 'THEME01', 0.004)
+    create_fkik_chains(edit_bones, thumb_fkik_chain, 'IK-Hand.L', 'IK', '.L', 'THEME01', 0.004, True)
+    create_fkik_chains(edit_bones, index_fkik_chain, 'IK-Hand.L', 'IK', '.L', 'THEME01', 0.004, True)
+    create_fkik_chains(edit_bones, mid_fkik_chain, 'IK-Hand.L', 'IK', '.L', 'THEME01', 0.004, True)
+    create_fkik_chains(edit_bones, ring_fkik_chain, 'IK-Hand.L', 'IK', '.L', 'THEME01', 0.004, True)
+    create_fkik_chains(edit_bones, pinky_fkik_chain, 'IK-Hand.L', 'IK', '.L', 'THEME01', 0.004, True)
 
     create_fkik_chains(edit_bones, thumb_fkik_chain, 'FK-Hand.L', 'FK', '.L', 'THEME03', 0.002)
     create_fkik_chains(edit_bones, index_fkik_chain, 'FK-Hand.L', 'FK', '.L', 'THEME03', 0.002)
@@ -854,11 +939,21 @@ def create_finger_fkik_chains(edit_bones):
     create_fkik_chains(edit_bones, ring_fkik_chain, 'FK-Hand.L', 'FK', '.L', 'THEME03', 0.002)
     create_fkik_chains(edit_bones, pinky_fkik_chain, 'FK-Hand.L', 'FK', '.L', 'THEME03', 0.002)
 
-    create_fkik_chains(edit_bones, thumb_fkik_chain, 'FK-Hand.R', 'FK', '.R', 'THEME03', 0.002)
-    create_fkik_chains(edit_bones, index_fkik_chain, 'FK-Hand.R', 'FK', '.R', 'THEME03', 0.002)
-    create_fkik_chains(edit_bones, mid_fkik_chain, 'FK-Hand.R', 'FK', '.R', 'THEME03', 0.002)
-    create_fkik_chains(edit_bones, ring_fkik_chain, 'FK-Hand.R', 'FK', '.R', 'THEME03', 0.002)
-    create_fkik_chains(edit_bones, pinky_fkik_chain, 'FK-Hand.R', 'FK', '.R', 'THEME03', 0.002)
+    # adjust position of middle joints in IK finger change
+    for bone in edit_bones:
+        if bone.name in ['IK-Thumb_2.L', 'IK-Index_2.L', 'IK-Mid_2.L', 'IK-Ring_2.L', 'IK-Pinky_2.L']:
+            if bone.name == 'IK-Thumb_2.L':
+                head_y_axis = bone.head[1]
+                tail_y_axis = bone.tail[1]
+                tail_z_axis = bone.tail[2]
+                bone.head[1] = head_y_axis - 0.005
+                bone.tail[1] = tail_y_axis - 0.005
+                bone.tail[2] = tail_z_axis + 0.005
+            else:
+                head_z_axis = bone.head[2]
+                tail_z_axis = bone.tail[2]
+                bone.head[2] = head_z_axis + 0.005
+                bone.tail[2] = tail_z_axis + 0.005
 
 
 def fix_bones(edit_bones):
@@ -891,7 +986,7 @@ def fix_bones(edit_bones):
 
 def create_fkik_chains(edit_bones: ArmatureEditBones, bone_chains:list[str], parent:str = '', prefix:str = 'IK', suffix:str ='.L',
                        palette:Literal["DEFAULT", "THEME01", "THEME02", "THEME03", "THEME04", "THEME05", "THEME06", "THEME07", "THEME08", "THEME09", "THEME10", "THEME11", "THEME12", "THEME13", "THEME14", "THEME15", "THEME16", "THEME17", "THEME18", "THEME19", "THEME20", "CUSTOM"] = 'THEME01',
-                       bone_size:float = 0.002) -> list[EditBone]:
+                       bone_size:float = 0.002, use_connect:bool = False) -> list[EditBone]:
     fkik_chains = []
     completed_fkik_chains = []
     for bc in bone_chains:
@@ -914,6 +1009,7 @@ def create_fkik_chains(edit_bones: ArmatureEditBones, bone_chains:list[str], par
         else:
             fkik_bone_parent = edit_bones[fkik_chains[i - 1]]
 
+        connect_bone = use_connect and 0 != i
         deform_bone_name = fkik_chain_item.replace(prefix, 'DEF')
         fkik_bone = create_bone(
             edit_bones=edit_bones,
@@ -923,6 +1019,7 @@ def create_fkik_chains(edit_bones: ArmatureEditBones, bone_chains:list[str], par
             head=edit_bones[deform_bone_name].head,
             tail=edit_bones[deform_bone_name].tail,
             bbone_size=bone_size,
+            use_connect=connect_bone,
         )
 
         completed_fkik_chains.append(fkik_bone)
