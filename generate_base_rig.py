@@ -695,7 +695,7 @@ def create_spine_control_bones(edit_bones):
     bone_ctrl_chest.parent = bone_ctrl_torso
 
 
-def create_ik_control_bones(edit_bones, chain: list[LiteralString], side ='.L', pole_name = 'Elbow', y_axis_position = 0.625,
+def create_ik_control_bones(edit_bones: ArmatureEditBones, chain: list[LiteralString], side ='.L', pole_name = 'Elbow', y_axis_position = 0.625,
                             control_color: Literal["DEFAULT", "THEME01", "THEME02", "THEME03", "THEME04", "THEME05", "THEME06", "THEME07", "THEME08", "THEME09", "THEME10", "THEME11", "THEME12", "THEME13", "THEME14", "THEME15", "THEME16", "THEME17", "THEME18", "THEME19", "THEME20", "CUSTOM"] = 'THEME01',
                             pole_color: Literal["DEFAULT", "THEME01", "THEME02", "THEME03", "THEME04", "THEME05", "THEME06", "THEME07", "THEME08", "THEME09", "THEME10", "THEME11", "THEME12", "THEME13", "THEME14", "THEME15", "THEME16", "THEME17", "THEME18", "THEME19", "THEME20", "CUSTOM"] = 'THEME09'):
 
@@ -1026,3 +1026,4 @@ def unregister():
 
 if __name__ == "__main__":
     register()
+
