@@ -1,4 +1,5 @@
 import bpy
+from .generate_base_rig import *
 
 bl_info = {
     "name": "Poser Rigger",
@@ -9,14 +10,16 @@ bl_info = {
     "category": "Object",
 }
 
-classes = ()
+
+classes = [RigPoserArmature_PT_Panel, OT_GenerateBaseRig_Operator]
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
 
+if __name__ == "__main__":
+    register()

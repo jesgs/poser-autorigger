@@ -1,10 +1,10 @@
 from typing import LiteralString, Sequence, Literal
-from mathutils import Matrix, Vector
-from bpy.types import ArmatureEditBones, EditBone
-import mathutils
+from mathutils import Vector, Matrix
+from bpy.types import ArmatureEditBones, EditBone, Armature, BoneCollections
 import colorsys
-import bpy
 import math
+import bpy
+
 
 bright_red = {
     'normal': colorsys.hsv_to_rgb(0.0, 1, 1),
@@ -64,6 +64,7 @@ def rename_bone(name, prefix = ''):
     return prefix + new_name
 
 
+
 def setup_poser_figure(objects):
     # Before deselecting everything, apply scale/rotation
     # Poser's scale is 1/100 smaller than Blender, plus rotation is different as well
@@ -116,9 +117,8 @@ def setup_poser_figure(objects):
 
             armature = bpy.context.object
 
-            # rigging_collection = armature.data.collections.new('Rigging')
-            # deform_collection = armature.data.collections.new('Deform')
-            # deform_collection.parent = rigging_collection
+            setup_collections(armature)
+
 
             # fix some issues with bones coming from Poser
             edit_bones = armature.data.edit_bones
@@ -129,19 +129,27 @@ def setup_poser_figure(objects):
             #create_pelvis_bones()
             rename_all_bones(armature, 'DEF-')
 
+            rigging_collection = armature.data.collections['Rigging']
+            deform_collection = rigging_collection.children['Deform']
+            deform_spine_collection = deform_collection.children['DEF Spine']
+
+            for bone in ['DEF-Hip', 'DEF-LowerAbdomen', 'DEF-Abdomen', 'DEF-Chest', 'DEF-Neck', 'DEF-Head']:
+                deform_spine_collection.assign(edit_bones.get(bone))
+
+
             bpy.ops.armature.select_all(action='SELECT')
             bpy.ops.armature.calculate_roll(type='GLOBAL_POS_Z')
 
-            create_spine_fkik_chains(edit_bones)
-            create_arm_fkik_chains(edit_bones)
-            create_leg_fkik_chains(edit_bones)
-            create_finger_fkik_chains(edit_bones)
+            create_spine_fkik_chains(edit_bones, armature.data.collections)
+            create_arm_fkik_chains(edit_bones, armature.data.collections)
+            create_leg_fkik_chains(edit_bones, armature.data.collections)
+            create_finger_fkik_chains(edit_bones, armature.data.collections)
             create_ik_control_bones(edit_bones, ['Hand', 'Forearm', 'Shoulder',])
             create_ik_control_bones(edit_bones, ['Foot', 'Shin', 'Thigh',], '.L', 'Knee', -0.625)
             create_ik_control_bones(edit_bones, ['LowerAbdomen', 'Hip',], '', 'Hip')
             create_ik_control_bones(edit_bones, ['Chest', 'Abdomen', ], '', 'Chest')
             create_ik_control_bones(edit_bones, ['Head', 'Neck',], '', 'Head', 0.5)
-            create_mch_shoulder_bones_and_controls(edit_bones)
+            create_mch_shoulder_bones_and_controls(edit_bones, armature.data.collections)
             create_spine_control_bones(edit_bones)
             create_finger_control_bones(edit_bones)
             create_foot_roll_control_bones(edit_bones)
@@ -149,7 +157,10 @@ def setup_poser_figure(objects):
 
             misc_bone_creation_cleanup(edit_bones)
 
-            create_properties_bone(edit_bones)
+            properties_bone = create_properties_bone(edit_bones)
+            root = armature.data.collections.get('Root')
+            root.assign(properties_bone)
+            root.assign(edit_bones['root'])
 
             # change bone-roll to Global +Z to prevent issues later on
             bpy.ops.armature.select_all(action='SELECT')
@@ -171,8 +182,8 @@ def setup_poser_figure(objects):
             add_ik_constraints(armature, 'CTRL-IK-Chest', ['Chest', 'Abdomen'], '', 'Chest', -90)
             add_ik_constraints(armature, 'CTRL-IK-Head', ['Head', 'Neck'], '', 'Head', 90)
             # fingers
-            # add_ik_constraints(armature, 'IK-Thumb_1', ['Thumb_1'], '.L', None)
-            # add_ik_constraints(armature, 'IK-Thumb_2', ['Thumb_3', 'Thumb_2'], '.L', None)
+            add_ik_constraints(armature, 'CTRL-IK-Thumb-Joint', ['Thumb_1'], '.L', None)
+            add_ik_constraints(armature, 'CTRL-IK-Thumb', ['Thumb_3', 'Thumb_2'], '.L', None)
             add_ik_constraints(armature, 'CTRL-IK-Index', ['Index_3', 'Index_2', 'Index_1'], '.L', None)
             add_ik_constraints(armature, 'CTRL-IK-Mid', ['Mid_3', 'Mid_2', 'Mid_1'], '.L', None)
             add_ik_constraints(armature, 'CTRL-IK-Ring', ['Ring_3', 'Ring_2', 'Ring_1'], '.L', None)
@@ -189,6 +200,37 @@ def setup_poser_figure(objects):
 
     bpy.context.scene.transform_orientation_slots[0].type = 'GLOBAL'
     bpy.context.scene.tool_settings.transform_pivot_point = 'MEDIAN_POINT'
+
+
+def setup_collections(armature):
+    collections = armature.data.collections
+    root_collection = collections.new('Root')
+    root_collection.is_visible = False
+
+    body_collection = collections.new('Body')
+    spine_collection = collections.new('Spine', parent=body_collection)
+    collections.new('Spine IK', parent=spine_collection)
+    collections.new('Spine FK', parent=spine_collection)
+
+    legs_collection = collections.new('Legs', parent=body_collection)
+    collections.new('Legs IK', parent=legs_collection)
+    collections.new('Legs FK', parent=legs_collection)
+
+    arms_collection = collections.new('Arms', parent=body_collection)
+    collections.new('Arms IK', parent=arms_collection)
+    collections.new('Arms FK', parent=arms_collection)
+
+    fingers_collection = collections.new('Fingers', parent=body_collection)
+    collections.new('Fingers IK', parent=fingers_collection)
+    collections.new('Fingers FK', parent=fingers_collection)
+
+    rigging_collection = collections.new('Rigging')
+    deform_collection = collections.new('Deform', parent=rigging_collection)
+    collections.new('MCH', parent=rigging_collection)
+    collections.new('DEF Spine', parent=deform_collection)
+    collections.new('DEF Legs', parent=deform_collection)
+    collections.new('DEF Arms', parent=deform_collection)
+    collections.new('DEF Fingers', parent=deform_collection)
 
 
 def create_finger_control_bones(edit_bones: ArmatureEditBones):
@@ -680,12 +722,17 @@ def add_transformation_constraint(pose_bone, target_bone, target_object,
     transform.to_min_z_scale = to_min_z_scale
 
 
-def create_mch_shoulder_bones_and_controls(edit_bones):
+def create_mch_shoulder_bones_and_controls(edit_bones, collections:BoneCollections):
     # what we need:
     # IK-Collar (both sides)
     # X/Y axis of Hand tail
     # grab existing bones for coordinates and alignment
     bpy.ops.armature.select_all(action='DESELECT')
+    rigging_collection = collections.get('Rigging')
+    mch_collection = rigging_collection.children['MCH']
+    mch_shoulder_collection = collections.new('MCH Shoulder')
+    mch_shoulder_collection.parent=mch_collection
+
     bone_ik_collar_bone = edit_bones['IK-Collar.L']
     bone_ik_hand_bone = edit_bones['IK-Hand.L']
     bone_ik_ctrl_hand = edit_bones['CTRL-IK-Hand.L']
@@ -695,16 +742,19 @@ def create_mch_shoulder_bones_and_controls(edit_bones):
     bone_mch_collar_bone.display_type = 'OCTAHEDRAL'
     assign_custom_color(bone_mch_collar_bone, bright_orange)
     bone_mch_collar_bone.select = True
+    mch_shoulder_collection.assign(bone_mch_collar_bone)
 
     bone_mch_collar__damped_track = edit_bones.new('MCH-Collar-DampedTrack.L')
     bone_mch_collar__damped_track.display_type = 'STICK'
     assign_custom_color(bone_mch_collar__damped_track, bright_yellow)
     bone_mch_collar__damped_track.select = True
+    mch_shoulder_collection.assign(bone_mch_collar__damped_track)
 
     bone_mch_collar__target = edit_bones.new('MCH-Collar-Target.L')
     bone_mch_collar__target.display_type = 'OCTAHEDRAL'
     assign_custom_color(bone_mch_collar__target, bright_orange)
     bone_mch_collar__target.select = True
+    mch_shoulder_collection.assign(bone_mch_collar__target)
 
     edit_bones.active = bone_mch_collar__target
 
@@ -792,7 +842,7 @@ def create_ik_control_bones(edit_bones: ArmatureEditBones, chain: list[LiteralSt
     # create a pole target bone based off second bone in chain, but rotate 90 degrees and move on Y-axis
     ik_pole_bone_name = ctrl_prefix + '-' + prefix + '-Pole-' + pole_name + side
     ik_pole_position_bone = edit_bones[prefix + '-' + chain[1] + side]
-    print(ik_pole_position_bone.name)
+
     create_bone(
         edit_bones=edit_bones,
         name=ik_pole_bone_name,
@@ -844,7 +894,12 @@ def add_copy_constraints(armature, prefix_target, prefix_constraint):
         constraint.subtarget = bone.name
 
 
-def create_leg_fkik_chains(edit_bones):
+def create_leg_fkik_chains(edit_bones, collections: BoneCollections):
+    body_collection = collections.get('Body')
+    legs_collection = body_collection.children.get('Legs')
+    legs_ik_collection = legs_collection.children.get('Legs IK')
+    legs_fk_collection = legs_collection.children.get('Legs FK')
+
     # leg chains
     leg_fkik_bone_chain = [
         'Buttock',
@@ -853,13 +908,23 @@ def create_leg_fkik_chains(edit_bones):
         'Foot',
         'Toe',
     ]
-    create_fkik_chains(edit_bones, leg_fkik_bone_chain, 'IK-Hip', 'IK', '.L', 'THEME01', 0.004)
-    create_fkik_chains(edit_bones, leg_fkik_bone_chain, 'IK-Hip', 'IK', '.R', 'THEME01', 0.004)
-    create_fkik_chains(edit_bones, leg_fkik_bone_chain, 'FK-Hip', 'FK', '.L', 'THEME03', 0.002)
-    create_fkik_chains(edit_bones, leg_fkik_bone_chain, 'FK-Hip', 'FK', '.R', 'THEME03', 0.002)
+
+    ik_chain = create_fkik_chains(edit_bones, leg_fkik_bone_chain, 'IK-Hip', 'IK', '.L', 'THEME01', 0.004)
+    fk_chain = create_fkik_chains(edit_bones, leg_fkik_bone_chain, 'FK-Hip', 'FK', '.L', 'THEME03', 0.002)
+
+    for ik_bone in ik_chain:
+        legs_ik_collection.assign(ik_bone)
+
+    for fk_bone in fk_chain:
+        legs_fk_collection.assign(fk_bone)
 
 
-def create_arm_fkik_chains(edit_bones):
+def create_arm_fkik_chains(edit_bones, collections: BoneCollections):
+    body_collection = collections.get('Body')
+    arms_collection = body_collection.children.get('Arms')
+    arms_ik_collection = arms_collection.children.get('Arms IK')
+    arms_fk_collection = arms_collection.children.get('Arms FK')
+
     # arm chains
     arm_fkik_bone_chain = [
         'Collar',
@@ -867,13 +932,22 @@ def create_arm_fkik_chains(edit_bones):
         'Forearm',
         'Hand',
     ]
-    create_fkik_chains(edit_bones, arm_fkik_bone_chain, 'IK-Chest', 'IK', '.L', 'THEME01', 0.004)
-    create_fkik_chains(edit_bones, arm_fkik_bone_chain, 'IK-Chest', 'IK', '.R', 'THEME01', 0.004)
-    create_fkik_chains(edit_bones, arm_fkik_bone_chain, 'FK-Chest', 'FK', '.L', 'THEME03', 0.002)
-    create_fkik_chains(edit_bones, arm_fkik_bone_chain, 'FK-Chest', 'FK', '.R', 'THEME03', 0.002)
+    ik_chain = create_fkik_chains(edit_bones, arm_fkik_bone_chain, 'IK-Chest', 'IK', '.L', 'THEME01', 0.004)
+    fk_chain = create_fkik_chains(edit_bones, arm_fkik_bone_chain, 'FK-Chest', 'FK', '.L', 'THEME03', 0.002)
+
+    for ik_bone in ik_chain:
+        arms_ik_collection.assign(ik_bone)
+
+    for fk_bone in fk_chain:
+        arms_fk_collection.assign(fk_bone)
 
 
-def create_spine_fkik_chains(edit_bones):
+def create_spine_fkik_chains(edit_bones, collections: BoneCollections):
+    body_collection = collections.get('Body')
+    spine_collection = body_collection.children.get('Spine')
+    spine_ik_collection = spine_collection.children.get('Spine IK')
+    spine_fk_collection = spine_collection.children.get('Spine FK')
+
     # handle all fk/ik chains
     spine_fkik_bone_chain = [
         'Hip',
@@ -883,11 +957,17 @@ def create_spine_fkik_chains(edit_bones):
         'Neck',
         'Head'
     ]
-    create_fkik_chains(edit_bones, spine_fkik_bone_chain, 'root', 'IK', '', 'THEME09', 0.004)
-    create_fkik_chains(edit_bones, spine_fkik_bone_chain, 'root', 'FK', '', 'THEME04', 0.002)
+    ik_chain = create_fkik_chains(edit_bones, spine_fkik_bone_chain, 'root', 'IK', '', 'THEME09', 0.004)
+    fk_chain = create_fkik_chains(edit_bones, spine_fkik_bone_chain, 'root', 'FK', '', 'THEME04', 0.002)
+
+    for ik_bone in ik_chain:
+        spine_ik_collection.assign(ik_bone)
+
+    for fk_bone in fk_chain:
+        spine_fk_collection.assign(fk_bone)
 
 
-def create_finger_fkik_chains(edit_bones):
+def create_finger_fkik_chains(edit_bones, collections: BoneCollections):
     # ofml — finger chains now
     thumb_fkik_chain = [
         'Thumb_1',
