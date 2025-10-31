@@ -1,5 +1,6 @@
 import bpy
-from .generate_base_rig import *
+from .panels import RigPoserArmature_PT_Panel
+from .operators import OT_GenerateBaseRig_Operator
 
 bl_info = {
     "name": "Poser Rigger",

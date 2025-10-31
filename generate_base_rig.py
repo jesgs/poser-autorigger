@@ -1,67 +1,11 @@
 from typing import LiteralString, Sequence, Literal
-from mathutils import Vector, Matrix
-from bpy.types import ArmatureEditBones, EditBone, Armature, BoneCollections
-import colorsys
-import math
+from bpy.types import BoneCollections
+from .helpers import rename_all_bones, create_bone, move_bone_along_local_axis, align_bone_to_source
+from .colorscheme import assign_custom_color, bright_red, bright_orange, bright_yellow, bright_blue, bright_green
+from .create_base import *
+from .create_eye_controls import create_eye_control_bones, setup_eye_tracking_constraints
+from .footroll import *
 import bpy
-
-
-bright_red = {
-    'normal': colorsys.hsv_to_rgb(0.0, 1, 1),
-    'select': colorsys.hsv_to_rgb(0.0, 1, 1),
-    'active': colorsys.hsv_to_rgb(0.0, 0.25, 1),
-}
-
-bright_orange = {
-    'normal': colorsys.hsv_to_rgb(0.0875, 1, 1),
-    'select': colorsys.hsv_to_rgb(0.0875, 1, 1),
-    'active': colorsys.hsv_to_rgb(0.0875, 0.25, 1),
-}
-
-bright_yellow = {
-    'normal': colorsys.hsv_to_rgb(0.167, 1, 1),
-    'select': colorsys.hsv_to_rgb(0.167, 1, 1),
-    'active': colorsys.hsv_to_rgb(0.167, 0.25, 1),
-}
-
-bright_green = {
-    'normal': colorsys.hsv_to_rgb(0.25, 1, 1),
-    'select': colorsys.hsv_to_rgb(0.25, 1, 1),
-    'active': colorsys.hsv_to_rgb(0.25, 0.25, 1),
-}
-
-bright_blue = {
-    'normal': colorsys.hsv_to_rgb(0.625, 1, 1),
-    'select': colorsys.hsv_to_rgb(0.625, 1, 1),
-    'active': colorsys.hsv_to_rgb(0.625, 0.625, 1),
-}
-
-
-def rename_all_bones(armature, prefix = ''):
-    bones = armature.data.edit_bones
-
-    for bone in bones:
-        new_name = rename_bone(bone.name, prefix)
-        if new_name != "":
-            armature.data.edit_bones[bone.name].name = new_name
-
-
-def rename_bone(name, prefix = ''):
-    if "root" in name or "PROPERTIES" in name:
-        return ""
-
-    new_name = name
-    if name.find('Left_') != -1:
-        new_name = name[5:] + '.L'
-    elif name.find('Right_') != -1:
-        new_name = name[6:] + '.R'
-
-    if name.find('l', 0, 1) != -1:
-        new_name = name[1:] + '.L'
-    elif name.find('r', 0, 1) != -1:
-        new_name = name[1:] + '.R'
-
-    return prefix + new_name
 
 
 
@@ -117,7 +61,7 @@ def setup_poser_figure(objects):
 
             armature = bpy.context.object
 
-            setup_collections(armature)
+            setup_collections(armature.data.collections)
 
 
             # fix some issues with bones coming from Poser
@@ -127,7 +71,7 @@ def setup_poser_figure(objects):
             create_root(edit_bones)
             create_lower_abdomen_bone(edit_bones)
             #create_pelvis_bones()
-            rename_all_bones(armature, 'DEF-')
+            rename_all_bones(edit_bones, 'DEF-')
 
             rigging_collection = armature.data.collections['Rigging']
             deform_collection = rigging_collection.children['Deform']
@@ -202,12 +146,25 @@ def setup_poser_figure(objects):
     bpy.context.scene.tool_settings.transform_pivot_point = 'MEDIAN_POINT'
 
 
-def setup_collections(armature):
-    collections = armature.data.collections
+def setup_collections(collections: BoneCollections):
+    # collections = armature.data.collections
+    all_collections = [
+        'Body',
+        'Spine IK',
+        'Spine FK',
+        'Legs IK',
+        'Legs FK',
+        'Arms IK',
+        'Arms FK',
+        'Fingers IK',
+        'Fingers FK',
+        'MCH',
+        'DEF'
+    ]
     root_collection = collections.new('Root')
     root_collection.is_visible = False
 
-    body_collection = collections.new('Body')
+    all_collections['Body'] = body_collection = collections.new('Body')
     spine_collection = collections.new('Spine', parent=body_collection)
     collections.new('Spine IK', parent=spine_collection)
     collections.new('Spine FK', parent=spine_collection)
@@ -225,12 +182,8 @@ def setup_collections(armature):
     collections.new('Fingers FK', parent=fingers_collection)
 
     rigging_collection = collections.new('Rigging')
-    deform_collection = collections.new('Deform', parent=rigging_collection)
+    deform_collection = collections.new('DEF', parent=rigging_collection)
     collections.new('MCH', parent=rigging_collection)
-    collections.new('DEF Spine', parent=deform_collection)
-    collections.new('DEF Legs', parent=deform_collection)
-    collections.new('DEF Arms', parent=deform_collection)
-    collections.new('DEF Fingers', parent=deform_collection)
 
 
 def create_finger_control_bones(edit_bones: ArmatureEditBones):
@@ -286,16 +239,6 @@ def create_finger_control_bones(edit_bones: ArmatureEditBones):
     align_bone_to_source(ik_thumb_bone, thumb_bone)
 
 
-def move_bone_along_local_axis(bone: EditBone, distance:float):
-    normal = (bone.tail - bone.head).normalized()
-
-    # Calculate the new head and tail positions
-    translation_vector = normal * distance
-
-    bone.head += translation_vector
-    bone.tail += translation_vector
-
-
 def misc_bone_creation_cleanup(edit_bones: ArmatureEditBones):
     # reposition spine IK controls and parent to spine controls
     bone_ctrl_ik_lowerabdomen = edit_bones['CTRL-IK-LowerAbdomen']
@@ -318,217 +261,6 @@ def misc_bone_creation_cleanup(edit_bones: ArmatureEditBones):
     assign_custom_color(edit_bones['CTRL-IK-Pole-Hip'], bright_blue)
     assign_custom_color(edit_bones['CTRL-IK-Pole-Chest'], bright_blue)
     assign_custom_color(edit_bones['CTRL-IK-Pole-Head'], bright_blue)
-
-
-def setup_eye_tracking_constraints(armature):
-    pose_bones = armature.pose.bones
-    # assign copy constraint from MCH-Eye.L to DEF-Eye.L
-    bone_mch_eye_left = pose_bones['MCH-Eye.L']
-    bone_eye_left = pose_bones['DEF-Eye.L']
-    bone_ctrl_eye_target_left = pose_bones['CTRL-Eye_Target.L']
-
-    add_copyrotation_constraint(
-        pose_bone=bone_eye_left,
-        target_bone=bone_mch_eye_left,
-        target_object=armature,
-        owner_space='WORLD',
-        target_space='WORLD',
-    )
-
-    add_damped_track_constraint(
-        pose_bone=bone_mch_eye_left,
-        target_bone=bone_ctrl_eye_target_left.name,
-        target_object=armature,
-        track_axis='TRACK_Y'
-    )
-
-
-def add_damped_track_constraint(pose_bone, target_bone, target_object, head_tail=0.0, track_axis='TRACK_X'):
-    dt = pose_bone.constraints.new('DAMPED_TRACK')
-    dt.subtarget = target_bone
-    dt.target = target_object
-    dt.head_tail = head_tail
-    dt.track_axis = track_axis
-
-
-def create_eye_control_bones(edit_bones):
-    # create main eye track and two eye track bones
-    bone_eye_left = edit_bones['DEF-Eye.L']
-
-    create_bone(
-        edit_bones=edit_bones,
-        name='MCH-Eye.L',
-        head=bone_eye_left.head,
-        tail=[bone_eye_left.tail[0], bone_eye_left.tail[1] + 0.005, bone_eye_left.tail[2]],
-        use_deform=False,
-        parent=bone_eye_left.parent,
-        bbone_size=bone_eye_left.bbone_z * 2
-    )
-
-    bone_ctrl_eye_target = create_bone(
-        edit_bones=edit_bones,
-        name='CTRL-Eye_Target',
-        head=[0, -0.25, bone_eye_left.head[2]],
-        tail=[0, -0.27, bone_eye_left.head[2]],
-        use_deform=False,
-        parent=None,
-        bbone_size=bone_eye_left.bbone_x,
-        custom_color=bright_blue
-    )
-
-    create_bone(
-        edit_bones=edit_bones,
-        name='CTRL-Eye_Target.L',
-        parent=bone_ctrl_eye_target,
-        head=[bone_eye_left.head[0], -0.25, bone_eye_left.head[2]],
-        tail=[bone_eye_left.head[0], -0.27, bone_eye_left.head[2]],
-        bbone_size=bone_eye_left.bbone_x,
-        custom_color=bright_yellow
-    )
-
-
-def setup_foot_roll_constraints(armature):
-    pose_bones = armature.pose.bones
-
-    bone_mch_roll_toe = pose_bones['MCH-Roll-Toe.L']
-    bone_mch_roll_foot = pose_bones['MCH-Roll-Foot.L']
-    bone_ctrl_foot_roll = pose_bones['CTRL-Foot-Roll.L']
-    bone_ctrl_foot_roll.lock_rotation = [False, True, True]
-
-    # add_transformation_constraint()
-    add_copylocation_constraint(
-        pose_bone=bone_mch_roll_foot,
-        target_bone=bone_mch_roll_toe,
-        target_object=armature,
-        head_tail=1.0,
-        owner_space='WORLD',
-        target_space='WORLD',
-    )
-
-    add_transformation_constraint(
-        pose_bone=bone_mch_roll_toe,
-        target_bone=bone_ctrl_foot_roll,
-        target_object=armature,
-        target_space='LOCAL',
-        owner_space='LOCAL',
-        map_from='ROTATION',
-        from_max_x_rot=181.0,
-        from_min_x_rot=90.0,
-        map_to='ROTATION',
-        to_min_x_rot=0.0,
-        to_max_x_rot=113.0
-    )
-
-    add_transformation_constraint(
-        pose_bone=bone_mch_roll_foot,
-        target_bone=bone_ctrl_foot_roll,
-        target_object=armature,
-        target_space='LOCAL',
-        owner_space='LOCAL',
-        map_from='ROTATION',
-        from_min_x_rot=0.0,
-        from_max_x_rot=90.0,
-        map_to='ROTATION',
-        to_min_x_rot=0.0,
-        to_max_x_rot=90.0
-    )
-
-    add_limitrotation_constraint(
-        pose_bone=bone_ctrl_foot_roll,
-        use_limit_x=True,
-        min_x=0.0,
-        max_x=math.radians(179.0)
-    )
-
-
-def create_bone(edit_bones: ArmatureEditBones, name:str, bbone_size:float=0.001, head:Vector|Sequence[float]=0.0, tail:Vector|Sequence[float]=0.0, length:float=None, parent:EditBone=None, display_type:Literal["ARMATURE_DEFINED", "OCTAHEDRAL", "STICK", "BBONE", "ENVELOPE", "WIRE"]="ARMATURE_DEFINED", use_deform=False, use_connect=False,
-                palette:Literal["DEFAULT", "THEME01", "THEME02", "THEME03", "THEME04", "THEME05", "THEME06", "THEME07", "THEME08", "THEME09", "THEME10", "THEME11", "THEME12", "THEME13", "THEME14", "THEME15", "THEME16", "THEME17", "THEME18", "THEME19", "THEME20", "CUSTOM"]='CUSTOM', custom_color: dict[str, tuple[float, float, float]] = None) -> EditBone:
-    new_bone = edit_bones.new(name)
-    new_bone.head = head
-    new_bone.tail = tail
-    new_bone.parent = parent
-    new_bone.use_deform = use_deform
-    new_bone.use_connect = use_connect
-    new_bone.display_type = display_type
-    new_bone.bbone_x = new_bone.bbone_z = bbone_size
-
-    if length is not None:
-        new_bone.length = length
-
-    if palette == 'CUSTOM' and custom_color is not None:
-        assign_custom_color(new_bone, custom_color)
-    else:
-        new_bone.color.palette = palette
-
-    return new_bone
-
-
-def create_foot_roll_control_bones(edit_bones):
-    # create and position bones for foot roll mechanism
-    # Bones (Symmetrized):
-    # MCH-Roll-Toe.L (parented to MCH-Foot-Rollback.L)
-    # MCH-Roll-Foot.L (parented to MCH-Foot-Rollback.L)
-    # Roll-Foot.L (parented to CTRL-IK-Foot.L)
-    # MCH-Foot-Rollback.L (parented to Roll-Foot.L)
-    # CTRL-Foot-Roll.L (parented to CTRL-IK-Foot.L
-
-    bone_ik_toe = edit_bones['IK-Toe.L']
-    bone_ik_foot = edit_bones['IK-Foot.L']
-    bone_ctrl_ik_foot = edit_bones['CTRL-IK-Foot.L']
-
-    create_bone(
-        edit_bones=edit_bones,
-        name='CTRL-Foot-Roll.L',
-        custom_color=bright_blue,
-        display_type='OCTAHEDRAL',
-        parent=bone_ctrl_ik_foot,
-        head=[bone_ik_foot.head[0], bone_ik_foot.head[1] + 0.05, bone_ik_foot.head[2]],
-        tail=[bone_ik_foot.head[0], bone_ik_foot.head[1] + 0.075, bone_ik_foot.head[2]]
-    )
-
-    bone_roll_foot = create_bone(
-        edit_bones=edit_bones,
-        name='Roll-Foot.L',
-        custom_color=bright_blue,
-        display_type='OCTAHEDRAL',
-        parent=bone_ctrl_ik_foot,
-        head=bone_ik_foot.head,
-        tail=[bone_ik_foot.head[0], -0.05 , bone_ik_foot.head[2]],
-    )
-
-    bone_mch_foot_rollback = create_bone(
-        edit_bones=edit_bones,
-        name='MCH-Foot-Rollback.L',
-        custom_color=bright_blue,
-        display_type='OCTAHEDRAL',
-        parent=bone_roll_foot,
-        head=[bone_ik_foot.head[0], bone_ik_foot.head[1], 0.025],
-        tail=[bone_ik_foot.head[0], bone_ik_foot.head[1] - 0.025, 0.025]
-    )
-
-    bone_mch_roll_toe = create_bone(
-        edit_bones=edit_bones,
-        name='MCH-Roll-Toe.L',
-        custom_color=bright_blue,
-        display_type='OCTAHEDRAL',
-        parent=bone_mch_foot_rollback,
-        head=[bone_ik_toe.tail[0], bone_ik_toe.tail[1], 0],
-        tail = bone_ik_toe.head
-    )
-
-    bone_mch_roll_foot = create_bone(
-        edit_bones=edit_bones,
-        name='MCH-Roll-Foot.L',
-        custom_color=bright_blue,
-        display_type='OCTAHEDRAL',
-        parent=bone_mch_foot_rollback,
-        head=bone_ik_foot.tail,
-        tail= bone_ik_foot.head
-    )
-
-    # parent existing bones to new ones
-    bone_ik_toe.parent = bone_mch_roll_toe
-    bone_ik_foot.parent = bone_mch_roll_foot
 
 
 def setup_collar_constraints(armature):
@@ -585,143 +317,6 @@ def setup_collar_constraints(armature):
     )
 
 
-def add_copylocation_constraint(pose_bone, target_bone, target_object, name = 'Copy Location', use_x = True, use_y = True, use_z = True, invert_x = False, invert_y = False, invert_z = False, use_offset = False, head_tail = 0.0, owner_space='LOCAL', target_space='LOCAL', influence = 1.0):
-    cl = pose_bone.constraints.new('COPY_LOCATION')
-    cl.name = name
-    cl.target = target_object
-    cl.subtarget = target_bone.name
-    cl.use_x = use_x
-    cl.use_y = use_y
-    cl.use_z = use_z
-    cl.invert_x = invert_x
-    cl.invert_y = invert_y
-    cl.invert_z = invert_z
-    cl.use_offset = use_offset
-    cl.head_tail = head_tail
-    cl.owner_space = owner_space
-    cl.target_space = target_space
-    cl.influence = influence
-
-
-def add_limitrotation_constraint(pose_bone, euler_order='AUTO',
-                                 max_x=0.0, max_y=0.0, max_z=0.0,
-                                 min_x=0.0, min_y=0.0, min_z=0.0,
-                                 use_limit_x=False, use_limit_y=False, use_limit_z=False,
-                                 owner_space='LOCAL', target_space='LOCAL', influence = 1.0
-                                 ):
-    lr = pose_bone.constraints.new('LIMIT_ROTATION')
-    lr.euler_order = euler_order
-    lr.max_x = max_x
-    lr.max_y = max_y
-    lr.max_z = max_z
-    lr.min_x = min_x
-    lr.min_y = min_y
-    lr.min_z = min_z
-    lr.use_limit_x = use_limit_x
-    lr.use_limit_y = use_limit_y
-    lr.use_limit_z = use_limit_z
-    lr.owner_space = owner_space
-    lr.target_space = target_space
-    lr.influence = influence
-
-def add_copyrotation_constraint(pose_bone, target_bone, target_object,
-                                name = 'Copy Rotation',
-                                use_x = True, use_y = True, use_z = True,
-                                invert_x = False, invert_y = False, invert_z = False,
-                                mix_mode = 'REPLACE', use_offset = False, euler_order='AUTO',
-                                owner_space='LOCAL', target_space='LOCAL',
-                                influence = 1.0):
-    cr = pose_bone.constraints.new('COPY_ROTATION')
-    cr.name = name
-    cr.target = target_object
-    cr.subtarget = target_bone.name
-    cr.use_x = use_x
-    cr.use_y = use_y
-    cr.use_z = use_z
-    cr.invert_x = invert_x
-    cr.invert_y = invert_y
-    cr.invert_z = invert_z
-    cr.mix_mode = mix_mode
-    cr.use_offset = use_offset
-    cr.euler_order = euler_order
-    cr.owner_space = owner_space
-    cr.target_space = target_space
-    cr.influence = influence
-
-
-def add_transformation_constraint(pose_bone, target_bone, target_object,
-                                  from_max_x=0.0, from_max_x_rot=0.0, from_max_x_scale=0.0,
-                                  from_max_y=0.0, from_max_y_rot=0.0, from_max_y_scale=0.0,
-                                  from_max_z=0.0, from_max_z_rot=0.0, from_max_z_scale=0.0,
-                                  from_min_x=0.0, from_min_x_rot=0.0, from_min_x_scale=0.0,
-                                  from_min_y=0.0, from_min_y_rot=0.0, from_min_y_scale=0.0,
-                                  from_min_z=0.0, from_min_z_rot=0.0, from_min_z_scale=0.0,
-                                  from_rotation_mode='AUTO', map_from='LOCATION', map_to='LOCATION',
-                                  map_to_x_from='X', map_to_y_from='Y', map_to_z_from='Z',
-                                  mix_mode='ADD', mix_mode_rot='ADD', mix_mode_scale='REPLACE',
-                                  to_max_x=0.0, to_max_x_rot=0.0, to_max_x_scale=0.0,
-                                  to_max_y=0.0, to_max_y_rot=0.0, to_max_y_scale=0.0,
-                                  to_max_z=0.0, to_max_z_rot=0.0, to_max_z_scale=0.0,
-                                  to_min_x=0.0, to_min_x_rot=0.0, to_min_x_scale=0.0,
-                                  to_min_y=0.0, to_min_y_rot=0.0, to_min_y_scale=0.0,
-                                  to_min_z=0.0, to_min_z_rot=0.0, to_min_z_scale=0.0,
-                                  to_euler_order = 'AUTO', name = 'Transformation',
-                                  target_space = 'WORLD', owner_space = 'WORLD'):
-
-    transform = pose_bone.constraints.new('TRANSFORM')
-    transform.name = name
-    transform.target = target_object
-    transform.subtarget = target_bone.name
-    transform.target_space = target_space
-    transform.owner_space = owner_space
-    transform.to_euler_order = to_euler_order
-    transform.from_max_x = from_max_x
-    transform.from_max_y = from_max_y
-    transform.from_max_z = from_max_z
-    transform.from_max_x_rot = math.radians(from_max_x_rot)
-    transform.from_max_y_rot = math.radians(from_max_y_rot)
-    transform.from_max_z_rot = math.radians(from_max_z_rot)
-    transform.from_max_x_scale = from_max_x_scale
-    transform.from_max_y_scale = from_max_y_scale
-    transform.from_max_z_scale = from_max_z_scale
-    transform.from_min_x = from_min_x
-    transform.from_min_y = from_min_y
-    transform.from_min_z = from_min_z
-    transform.from_min_x_rot = math.radians(from_min_x_rot)
-    transform.from_min_y_rot = math.radians(from_min_y_rot)
-    transform.from_min_z_rot = math.radians(from_min_z_rot)
-    transform.from_min_x_scale = from_min_x_scale
-    transform.from_min_y_scale = from_min_y_scale
-    transform.from_min_z_scale = from_min_z_scale
-    transform.from_rotation_mode = from_rotation_mode
-    transform.map_to = map_to
-    transform.map_to_x_from = map_to_x_from
-    transform.map_to_y_from = map_to_y_from
-    transform.map_to_z_from = map_to_z_from
-    transform.map_from = map_from
-    transform.mix_mode = mix_mode
-    transform.mix_mode_rot = mix_mode_rot
-    transform.mix_mode_scale = mix_mode_scale
-    transform.to_max_x = to_max_x
-    transform.to_max_y = to_max_y
-    transform.to_max_z = to_max_z
-    transform.to_max_x_rot = math.radians(to_max_x_rot)
-    transform.to_max_y_rot = math.radians(to_max_y_rot)
-    transform.to_max_z_rot = math.radians(to_max_z_rot)
-    transform.to_max_x_scale = to_max_x_scale
-    transform.to_max_y_scale = to_max_y_scale
-    transform.to_max_z_scale = to_max_z_scale
-    transform.to_min_x = to_min_x
-    transform.to_min_y = to_min_y
-    transform.to_min_z = to_min_z
-    transform.to_min_x_rot = math.radians(to_min_x_rot)
-    transform.to_min_y_rot = math.radians(to_min_y_rot)
-    transform.to_min_z_rot = math.radians(to_min_z_rot)
-    transform.to_min_x_scale = to_min_x_scale
-    transform.to_min_y_scale = to_min_y_scale
-    transform.to_min_z_scale = to_min_z_scale
-
-
 def create_mch_shoulder_bones_and_controls(edit_bones, collections:BoneCollections):
     # what we need:
     # IK-Collar (both sides)
@@ -775,24 +370,6 @@ def create_mch_shoulder_bones_and_controls(edit_bones, collections:BoneCollectio
 
     # align target bone to ik control
     align_bone_to_source(bone_mch_collar__target, bone_ik_ctrl_hand)
-
-
-def align_bone_to_source(source_bone:EditBone, target_bone:EditBone):
-    target_dir = target_bone.tail - target_bone.head
-    source_dir = source_bone.tail - source_bone.head
-
-    rotation_q = source_dir.rotation_difference(target_dir)
-
-    location, rotation, scale = source_bone.matrix.decompose()
-    new_rotation = rotation_q @ rotation
-    source_bone.matrix = Matrix.LocRotScale(location, new_rotation, scale)
-
-
-def assign_custom_color(bone, color: dict[str, tuple[float, float, float]]):
-    bone.color.palette = 'CUSTOM'
-    bone.color.custom.normal = color['normal']
-    bone.color.custom.select = color['select']
-    bone.color.custom.active = color['active']
 
 
 def create_spine_control_bones(edit_bones: ArmatureEditBones):
@@ -852,46 +429,6 @@ def create_ik_control_bones(edit_bones: ArmatureEditBones, chain: list[LiteralSt
         parent=ik_control_bone,
         palette=pole_color,
     )
-
-
-
-def add_ik_constraints(armature, ik_target_name, chain: list[LiteralString], side:str = '.L', pole_name:str = None, pole_angle:float = 180):
-    bones = armature.pose.bones
-    chain_length = len(chain)
-    ik_target_bone = bones.get(ik_target_name + side)
-    ik_constraint_bone_name = 'IK-' + chain[0] + side
-
-    ik_constraint = bones[ik_constraint_bone_name].constraints.new('IK')
-    ik_constraint.target = armature
-    ik_constraint.subtarget = ik_target_bone.name
-    ik_constraint.chain_count = chain_length
-
-    if pole_name is not None:
-        ik_pole_bone = bones.get('CTRL-IK-Pole-' + pole_name + side)
-        ik_constraint.pole_target = armature
-        ik_constraint.pole_angle = math.radians(pole_angle)
-        ik_constraint.pole_subtarget = ik_pole_bone.name
-
-    ik_constraint.enabled = True
-
-
-def add_copy_constraints(armature, prefix_target, prefix_constraint):
-    bones = armature.pose.bones
-
-    for bone in bones:
-        if not bone.name.startswith(prefix_target):
-            continue
-
-        constraint_bone_name = bone.name.replace(prefix_target, prefix_constraint)
-        if constraint_bone_name not in bones:
-            continue
-
-        # Add the constraint itself
-        constraint = bones[constraint_bone_name].constraints.new('COPY_TRANSFORMS')
-        default_constraint_name = constraint.name
-        constraint.name = default_constraint_name + ' ' + bone.name
-        constraint.target = armature
-        constraint.subtarget = bone.name
 
 
 def create_leg_fkik_chains(edit_bones, collections: BoneCollections):
@@ -1024,32 +561,32 @@ def create_finger_fkik_chains(edit_bones, collections: BoneCollections):
                 bone.tail[2] = tail_z_axis + 0.005
 
 
-def fix_bones(edit_bones):
+def fix_bones(edit_bones: ArmatureEditBones):
     # head and neck bone are off-center, let's fix
-    edit_bones['Head'].head[0] = 0  # this should also move the tail of the neck bone since they're connected
+    edit_bones['Head'].head.x = 0  # this should also move the tail of the neck bone since they're connected
 
     # let's also align tail of chest bone with head of neck bone
     # move the z and y axi, but we need to find the center
-    chest_tail_y = edit_bones['Chest'].tail[1]
-    chest_tail_z = edit_bones['Chest'].tail[2]
-    neck_head_y = edit_bones['Neck'].head[1]
-    neck_head_z = edit_bones['Neck'].head[2]
+    chest_tail_y = edit_bones['Chest'].tail.y
+    chest_tail_z = edit_bones['Chest'].tail.z
+    neck_head_y = edit_bones['Neck'].head.y
+    neck_head_z = edit_bones['Neck'].head.z
     center_y = (neck_head_y + chest_tail_y) / 2
     center_z = (neck_head_z + chest_tail_z) / 2
 
-    edit_bones['Neck'].head[1] = center_y
-    edit_bones['Neck'].head[2] = center_z
-    edit_bones['Chest'].tail[1] = center_y
-    edit_bones['Chest'].tail[2] = center_z
+    edit_bones['Neck'].head.y = center_y
+    edit_bones['Neck'].head.z = center_z
+    edit_bones['Chest'].tail.y = center_y
+    edit_bones['Chest'].tail.z = center_z
 
     # fix eyes and toe bones as well
-    eye_y = edit_bones['Left_Eye'].tail[1]
-    edit_bones['Left_Eye'].tail[1] = eye_y - -0.1
-    edit_bones['Right_Eye'].tail[1] = eye_y - -0.1
+    eye_y = edit_bones['Left_Eye'].tail.y
+    edit_bones['Left_Eye'].tail.y = eye_y - -0.1
+    edit_bones['Right_Eye'].tail.y = eye_y - -0.1
 
-    toe_y = edit_bones['Left_Toe'].tail[1]
-    edit_bones['Left_Toe'].tail[1] = toe_y - -0.1
-    edit_bones['Right_Toe'].tail[1] = toe_y - -0.1
+    toe_y = edit_bones['Left_Toe'].tail.y
+    edit_bones['Left_Toe'].tail.y = toe_y - -0.1
+    edit_bones['Right_Toe'].tail.y = toe_y - -0.1
 
 
 def create_fkik_chains(edit_bones: ArmatureEditBones, bone_chains:list[str], parent:str = '', prefix:str = 'IK', suffix:str ='.L',
@@ -1111,19 +648,6 @@ def create_pelvis_bones():
     # bone_right_buttock.parent = bone_right_pelvis
 
 
-def create_properties_bone(edit_bones):
-    # create new properties bone
-    properties_bone = edit_bones.new('PROPERTIES')
-    properties_bone.parent = edit_bones['root']
-    properties_bone.head = [0, 0, 0]
-    properties_bone.tail = [0, 0.25, 0]
-    properties_bone.use_deform = False
-
-    properties_bone.color.palette = 'THEME03'
-    properties_bone.bbone_z = 0.01
-    properties_bone.bbone_x = 0.01
-
-
 def create_lower_abdomen_bone(edit_bones):
     # create new LowerAbdomen bone, move to between hip and abdomen, make hip its parent,
     # then parent abdomen to new bone
@@ -1136,59 +660,4 @@ def create_lower_abdomen_bone(edit_bones):
     edit_bones['Abdomen'].parent = bone_lower_abdomen
     bone_lower_abdomen.bbone_z = 0.001
     bone_lower_abdomen.bbone_x = 0.001
-
-
-def create_root(edit_bones):
-    # rename Body to root, disconnect, and drop to 0
-    edit_bones['Hip'].use_connect = False
-    edit_bones['Body'].use_deform = False
-    edit_bones['Body'].head = [0, 0, 0]
-    edit_bones['Body'].tail = [0, 0.5, 0]
-    edit_bones['Body'].color.palette = 'THEME09'
-    edit_bones['Body'].name = 'root'
-
-
-class GenerateBaseRig_Operator(bpy.types.Operator):
-    bl_idname = "poser.generate_base_rig"
-    bl_label = "Generate Base Rig"
-    bl_description = "Generate Base Rig"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(cls, context):
-        if len(context.scene.objects) == 0:
-            return False
-
-        return True
-
-    def execute(self, context):
-        setup_poser_figure(context.selected_objects)
-        return {'FINISHED'}
-
-class RigPoserArmature_PT_Panel(bpy.types.Panel):
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_label = "Rig Poser"
-    bl_category = "Rig Poser"
-    bl_idname = "VIEW3D_PT_RigPoserArmature_PT_Panel"
-
-    def draw(self, context):
-        layout = self.layout
-        op_row = layout.row(align=True)
-        op_row.scale_y = 1.5
-
-        op_row.operator("poser.generate_base_rig", icon="POSE_HLT")
-
-classes = [RigPoserArmature_PT_Panel, GenerateBaseRig_Operator]
-
-def register():
-    for cls in classes:
-        bpy.utils.register_class(cls)
-
-def unregister():
-    for cls in classes:
-        bpy.utils.unregister_class(cls)
-
-if __name__ == "__main__":
-    register()
 
