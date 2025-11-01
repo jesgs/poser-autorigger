@@ -1,22 +1,26 @@
-from bpy.types import ArmatureEditBones, EditBone
+import bpy
+from bpy.types import EditBone
+from .helpers import create_bone
+
+def create_properties_bone() -> EditBone:
+    edit_bones = bpy.context.object.data.edit_bones
+    collection = bpy.context.object.data.collections_all.get('Root')
+    return create_bone(
+        edit_bones=edit_bones,
+        name='PROPERTIES',
+        bbone_size=0.01,
+        head=[0, 0, 0],
+        tail=[0, 0.25, 0],
+        use_deform=False,
+        palette='THEME03',
+        collection=collection,
+        parent=edit_bones['root']
+    )
 
 
-def create_properties_bone(edit_bones: ArmatureEditBones) -> EditBone:
-    # create new properties bone
-    properties_bone = edit_bones.new('PROPERTIES')
-    properties_bone.parent = edit_bones['root']
-    properties_bone.head = [0, 0, 0]
-    properties_bone.tail = [0, 0.25, 0]
-    properties_bone.use_deform = False
-
-    properties_bone.color.palette = 'THEME03'
-    properties_bone.bbone_z = 0.01
-    properties_bone.bbone_x = 0.01
-
-    return properties_bone
-
-
-def create_root(edit_bones: ArmatureEditBones) -> EditBone:
+def create_root():
+    collection = bpy.context.object.data.collections_all.get('Root')
+    edit_bones = bpy.context.object.data.edit_bones
     # rename Body to root, disconnect, and drop to 0
     edit_bones['Hip'].use_connect = False
     edit_bones['Body'].use_deform = False
@@ -24,5 +28,4 @@ def create_root(edit_bones: ArmatureEditBones) -> EditBone:
     edit_bones['Body'].tail = [0, 0.5, 0]
     edit_bones['Body'].color.palette = 'THEME09'
     edit_bones['Body'].name = 'root'
-
-    return edit_bones['root']
+    collection.assign(edit_bones['root'])

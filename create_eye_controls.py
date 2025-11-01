@@ -1,9 +1,11 @@
+import bpy
 from .constraints import add_copyrotation_constraint, add_damped_track_constraint
 from .helpers import create_bone
 from .colorscheme import bright_blue, bright_yellow
 
-def setup_eye_tracking_constraints(armature):
-    pose_bones = armature.pose.bones
+def setup_eye_tracking_constraints():
+    armature = bpy.context.object
+    pose_bones = bpy.context.object.pose.bones
     # assign copy constraint from MCH-Eye.L to DEF-Eye.L
     bone_mch_eye_left = pose_bones['MCH-Eye.L']
     bone_eye_left = pose_bones['DEF-Eye.L']
@@ -25,7 +27,9 @@ def setup_eye_tracking_constraints(armature):
     )
 
 
-def create_eye_control_bones(edit_bones):
+def create_eye_control_bones():
+    collection = bpy.context.object.data.collections_all.get('Eyes CTRL')
+    edit_bones = bpy.context.object.data.edit_bones
     # create main eye track and two eye track bones
     bone_eye_left = edit_bones['DEF-Eye.L']
 
@@ -36,7 +40,8 @@ def create_eye_control_bones(edit_bones):
         tail=[bone_eye_left.tail[0], bone_eye_left.tail[1] + 0.005, bone_eye_left.tail[2]],
         use_deform=False,
         parent=bone_eye_left.parent,
-        bbone_size=bone_eye_left.bbone_z * 2
+        bbone_size=bone_eye_left.bbone_z * 2,
+        collection=collection
     )
 
     bone_ctrl_eye_target = create_bone(
@@ -47,7 +52,8 @@ def create_eye_control_bones(edit_bones):
         use_deform=False,
         parent=None,
         bbone_size=bone_eye_left.bbone_x,
-        custom_color=bright_blue
+        custom_color=bright_blue,
+        collection=collection
     )
 
     create_bone(
@@ -57,5 +63,6 @@ def create_eye_control_bones(edit_bones):
         head=[bone_eye_left.head[0], -0.25, bone_eye_left.head[2]],
         tail=[bone_eye_left.head[0], -0.27, bone_eye_left.head[2]],
         bbone_size=bone_eye_left.bbone_x,
-        custom_color=bright_yellow
+        custom_color=bright_yellow,
+        collection=collection
     )

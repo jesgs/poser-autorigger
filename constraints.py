@@ -1,4 +1,6 @@
+from typing import LiteralString
 import math
+import bpy
 
 
 def add_damped_track_constraint(pose_bone, target_bone, target_object, head_tail=0.0, track_axis='TRACK_X'):
@@ -146,8 +148,10 @@ def add_transformation_constraint(pose_bone, target_bone, target_object,
 
 
 
-def add_ik_constraints(armature, ik_target_name, chain: list[LiteralString], side:str = '.L', pole_name:str = None, pole_angle:float = 180):
+def add_ik_constraints(ik_target_name, chain: list[LiteralString], side:str = '.L', pole_name:str = None, pole_angle:float = 180):
+    armature = bpy.context.object
     bones = armature.pose.bones
+
     chain_length = len(chain)
     ik_target_bone = bones.get(ik_target_name + side)
     ik_constraint_bone_name = 'IK-' + chain[0] + side
@@ -166,7 +170,8 @@ def add_ik_constraints(armature, ik_target_name, chain: list[LiteralString], sid
     ik_constraint.enabled = True
 
 
-def add_copy_constraints(armature, prefix_target, prefix_constraint):
+def add_copy_constraints(prefix_target, prefix_constraint):
+    armature = bpy.context.object
     bones = armature.pose.bones
 
     for bone in bones:

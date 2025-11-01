@@ -1,11 +1,12 @@
-from typing import LiteralString, Sequence, Literal
+import bpy
+from typing import Sequence, Literal
 from mathutils import Vector, Matrix
-from bpy.types import ArmatureEditBones, EditBone
+from bpy.types import ArmatureEditBones, EditBone, BoneCollection
 from .colorscheme import assign_custom_color
 
 
-def rename_all_bones(edit_bones: ArmatureEditBones, prefix = ''):
-
+def rename_all_bones(prefix = ''):
+    edit_bones = bpy.context.object.data.edit_bones
     for bone in edit_bones:
         new_name = rename_bone(bone.name, prefix)
         if new_name != "":
@@ -31,7 +32,9 @@ def rename_bone(name, prefix = ''):
 
 
 def create_bone(edit_bones: ArmatureEditBones, name:str, bbone_size:float=0.001, head:Vector|Sequence[float]=0.0, tail:Vector|Sequence[float]=0.0, length:float=None, parent:EditBone=None, display_type:Literal["ARMATURE_DEFINED", "OCTAHEDRAL", "STICK", "BBONE", "ENVELOPE", "WIRE"]="ARMATURE_DEFINED", use_deform=False, use_connect=False,
-                palette:Literal["DEFAULT", "THEME01", "THEME02", "THEME03", "THEME04", "THEME05", "THEME06", "THEME07", "THEME08", "THEME09", "THEME10", "THEME11", "THEME12", "THEME13", "THEME14", "THEME15", "THEME16", "THEME17", "THEME18", "THEME19", "THEME20", "CUSTOM"]='CUSTOM', custom_color: dict[str, tuple[float, float, float]] = None) -> EditBone:
+                palette:Literal["DEFAULT", "THEME01", "THEME02", "THEME03", "THEME04", "THEME05", "THEME06", "THEME07", "THEME08", "THEME09", "THEME10", "THEME11", "THEME12", "THEME13", "THEME14", "THEME15", "THEME16", "THEME17", "THEME18", "THEME19", "THEME20", "CUSTOM"]='CUSTOM',
+                custom_color: dict[str, tuple[float, float, float]] = None,
+                collection:BoneCollection = None) -> EditBone:
     new_bone = edit_bones.new(name)
     new_bone.head = head
     new_bone.tail = tail
@@ -48,6 +51,9 @@ def create_bone(edit_bones: ArmatureEditBones, name:str, bbone_size:float=0.001,
         assign_custom_color(new_bone, custom_color)
     else:
         new_bone.color.palette = palette
+
+    if collection is not None:
+        collection.assign(new_bone)
 
     return new_bone
 

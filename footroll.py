@@ -1,9 +1,11 @@
+import bpy
 from .constraints import *
 from .helpers import create_bone
 from .colorscheme import bright_blue
 
-def setup_foot_roll_constraints(armature):
-    pose_bones = armature.pose.bones
+def setup_foot_roll_constraints():
+    armature = bpy.context.object
+    pose_bones = bpy.context.object.pose.bones
 
     bone_mch_roll_toe = pose_bones['MCH-Roll-Toe.L']
     bone_mch_roll_foot = pose_bones['MCH-Roll-Foot.L']
@@ -56,7 +58,16 @@ def setup_foot_roll_constraints(armature):
     )
 
 
-def create_foot_roll_control_bones(edit_bones):
+def create_foot_roll_control_bones():
+    all_collections = bpy.context.object.data.collections_all
+    collection = bpy.context.object.data.collections
+    mch_collection = all_collections.get('MCH')
+    leg_collection = all_collections.get('Legs')
+
+    mch_footroll_collection = collection.new('MCH Footroll', parent=mch_collection)
+    footroll_ctrl_collection = collection.new('Foot Roll', parent=leg_collection)
+    edit_bones = bpy.context.object.data.edit_bones
+
     # create and position bones for foot roll mechanism
     # Bones (Symmetrized):
     # MCH-Roll-Toe.L (parented to MCH-Foot-Rollback.L)
@@ -76,7 +87,8 @@ def create_foot_roll_control_bones(edit_bones):
         display_type='OCTAHEDRAL',
         parent=bone_ctrl_ik_foot,
         head=[bone_ik_foot.head[0], bone_ik_foot.head[1] + 0.05, bone_ik_foot.head[2]],
-        tail=[bone_ik_foot.head[0], bone_ik_foot.head[1] + 0.075, bone_ik_foot.head[2]]
+        tail=[bone_ik_foot.head[0], bone_ik_foot.head[1] + 0.075, bone_ik_foot.head[2]],
+        collection=footroll_ctrl_collection,
     )
 
     bone_roll_foot = create_bone(
@@ -87,6 +99,7 @@ def create_foot_roll_control_bones(edit_bones):
         parent=bone_ctrl_ik_foot,
         head=bone_ik_foot.head,
         tail=[bone_ik_foot.head[0], -0.05 , bone_ik_foot.head[2]],
+        collection=mch_footroll_collection,
     )
 
     bone_mch_foot_rollback = create_bone(
@@ -96,7 +109,8 @@ def create_foot_roll_control_bones(edit_bones):
         display_type='OCTAHEDRAL',
         parent=bone_roll_foot,
         head=[bone_ik_foot.head[0], bone_ik_foot.head[1], 0.025],
-        tail=[bone_ik_foot.head[0], bone_ik_foot.head[1] - 0.025, 0.025]
+        tail=[bone_ik_foot.head[0], bone_ik_foot.head[1] - 0.025, 0.025],
+        collection=mch_footroll_collection,
     )
 
     bone_mch_roll_toe = create_bone(
@@ -106,7 +120,8 @@ def create_foot_roll_control_bones(edit_bones):
         display_type='OCTAHEDRAL',
         parent=bone_mch_foot_rollback,
         head=[bone_ik_toe.tail[0], bone_ik_toe.tail[1], 0],
-        tail = bone_ik_toe.head
+        tail = bone_ik_toe.head,
+        collection=mch_footroll_collection,
     )
 
     bone_mch_roll_foot = create_bone(
@@ -116,7 +131,8 @@ def create_foot_roll_control_bones(edit_bones):
         display_type='OCTAHEDRAL',
         parent=bone_mch_foot_rollback,
         head=bone_ik_foot.tail,
-        tail= bone_ik_foot.head
+        tail= bone_ik_foot.head,
+        collection=mch_footroll_collection,
     )
 
     # parent existing bones to new ones
