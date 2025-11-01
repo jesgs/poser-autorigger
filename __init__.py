@@ -9,16 +9,11 @@ if _needs_reload:
     from .panels import RigPoserArmature_PT_Panel
     from .operators import OT_GenerateBaseRig_Operator
 
-    print("*****************")
-    print("Reloading ", __name__)
-    print("*****************")
-
     all_modules = sys.modules
     all_modules = dict(sorted(all_modules.items(), key=lambda x: x[0]))  # sort them
-
+    # reload modules
     for k, v in all_modules.items():
         if k.startswith(__name__):
-            print(k, " reloaded")
             importlib.reload(v)
 
 
@@ -42,6 +37,3 @@ def register():
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
-
-if __name__ == "__main__":
-    register()
