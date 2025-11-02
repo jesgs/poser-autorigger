@@ -1,16 +1,27 @@
 import bpy
 def create_custom_properties():
     properties_bone = bpy.context.object.pose.bones['PROPERTIES']
-    # ik/fk switching
+
     properties_bone['head_tracking'] = False
+    properties_bone['collar_tracking_speed_multiplier'] = 0.05
+
+    # ik/fk switching
     properties_bone['arms_fkik'] = [1.0, 1.0]
     properties_bone['legs_fkik'] = [1.0, 1.0]
     properties_bone['spine_fkik'] = [1.0, 1.0]
     properties_bone['fingers_fkik_l'] = [1.0, 1.0, 1.0, 1.0, 1.0]
     properties_bone['fingers_fkik_r'] = [1.0, 1.0, 1.0, 1.0, 1.0]
 
+
     properties_bone.property_overridable_library_set(f'["head_tracking"]', True)
     properties_bone.id_properties_ui('head_tracking')
+
+    properties_bone.property_overridable_library_set(f'["collar_tracking_speed_multiplier"]', True)
+    collar_tracking_speed_multiplier_ui = properties_bone.id_properties_ui('collar_tracking_speed_multiplier')
+    collar_tracking_speed_multiplier_ui.update(
+        min=0.0,
+        max=1.0,
+    )
 
     properties_bone.property_overridable_library_set(f'["arms_fkik"]', True)
     arms_fkik_ui = properties_bone.id_properties_ui('arms_fkik')
