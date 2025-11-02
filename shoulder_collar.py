@@ -85,10 +85,14 @@ def create_mch_shoulder_bones_and_controls():
         parent=bone_def_chest,
         display_type='OCTAHEDRAL',
         palette='CUSTOM',
+        head=bone_ik_collar_bone.head,
+        tail=bone_ik_collar_bone.tail,
         custom_color=bright_orange,
         collection=mch_shoulder_collection,
     )
+    bone_ik_collar_bone.parent = bone_mch_collar_bone
     bone_mch_collar_bone.select = True
+
 
     bone_mch_collar__damped_track = create_bone(
         edit_bones=edit_bones,
@@ -96,6 +100,8 @@ def create_mch_shoulder_bones_and_controls():
         parent=bone_def_chest,
         display_type='STICK',
         palette='CUSTOM',
+        head=bone_ik_collar_bone.head,
+        tail=bone_ik_hand_bone.head,
         custom_color=bright_yellow,
         collection=mch_shoulder_collection,
     )
@@ -109,25 +115,15 @@ def create_mch_shoulder_bones_and_controls():
         palette='CUSTOM',
         custom_color=bright_orange,
         collection=mch_shoulder_collection,
+        head=bone_mch_collar__damped_track.tail,
+        tail=[bone_mch_collar__damped_track.tail[0], 0.1, bone_mch_collar__damped_track.tail[2]],
     )
     bone_mch_collar__target.select = True
 
     edit_bones.active = bone_mch_collar__target
 
-    # move the MCH bone to match the current IK bone
-    bone_mch_collar_bone.head = bone_ik_collar_bone.head
-    bone_mch_collar_bone.tail = bone_ik_collar_bone.tail
-    bone_mch_collar__damped_track.head = bone_ik_collar_bone.head
-    bone_mch_collar__damped_track.tail = bone_ik_hand_bone.head
-    bone_mch_collar__target.head = bone_mch_collar__damped_track.tail
-
     # align damped track bone to collar bone
     align_bone_to_source(bone_mch_collar__damped_track, bone_ik_collar_bone)
-
-    bone_mch_collar__target.head = bone_mch_collar__damped_track.tail
-    bone_mch_collar__target.tail = [bone_mch_collar__damped_track.tail[0], 0.1, bone_mch_collar__damped_track.tail[2]]
-
-    bone_ik_collar_bone.parent = bone_mch_collar_bone
 
     # align target bone to ik control
     align_bone_to_source(bone_mch_collar__target, bone_ik_ctrl_hand)
