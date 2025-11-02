@@ -1,5 +1,3 @@
-from bpy.props import FloatVectorProperty
-from bpy.types import PoseBone
 import bpy
 def create_custom_properties():
     properties_bone = bpy.context.object.pose.bones['PROPERTIES']
