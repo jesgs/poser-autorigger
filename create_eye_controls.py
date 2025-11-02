@@ -1,5 +1,5 @@
 import bpy
-from .constraints import add_copyrotation_constraint, add_damped_track_constraint
+from .constraints import add_copy_rotation_constraint, add_damped_track_constraint
 from .helpers import create_bone
 from .colorscheme import bright_blue, bright_yellow
 
@@ -11,7 +11,7 @@ def setup_eye_tracking_constraints():
     bone_eye_left = pose_bones['DEF-Eye.L']
     bone_ctrl_eye_target_left = pose_bones['CTRL-Eye_Target.L']
 
-    add_copyrotation_constraint(
+    add_copy_rotation_constraint(
         pose_bone=bone_eye_left,
         target_bone=bone_mch_eye_left,
         target_object=armature,

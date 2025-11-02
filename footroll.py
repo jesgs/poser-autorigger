@@ -13,7 +13,7 @@ def setup_foot_roll_constraints():
     bone_ctrl_foot_roll.lock_rotation = [False, True, True]
 
     # add_transformation_constraint()
-    add_copylocation_constraint(
+    add_copy_location_constraint(
         pose_bone=bone_mch_roll_foot,
         target_bone=bone_mch_roll_toe,
         target_object=armature,
@@ -50,7 +50,7 @@ def setup_foot_roll_constraints():
         to_max_x_rot=90.0
     )
 
-    add_limitrotation_constraint(
+    add_limit_rotation_constraint(
         pose_bone=bone_ctrl_foot_roll,
         use_limit_x=True,
         min_x=0.0,

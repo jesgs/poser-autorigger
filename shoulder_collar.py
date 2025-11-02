@@ -1,4 +1,4 @@
-from .constraints import add_damped_track_constraint, add_copylocation_constraint
+from .constraints import add_damped_track_constraint, add_copy_location_constraint
 from .colorscheme import assign_custom_color, bright_orange, bright_yellow
 from .helpers import align_bone_to_source, create_bone
 import bpy
@@ -28,7 +28,7 @@ def setup_collar_constraints():
     # add Copy Location constraints to bone_mch_collar__target from bone_ik_ctrl_hand
     # these constraints will need drivers assigned to determine influence amount when moving the
     # IK control
-    add_copylocation_constraint(
+    add_copy_location_constraint(
         pose_bone=bone_mch_collar__target,
         target_bone=bone_ik_ctrl_hand,
         target_object=armature,
@@ -36,7 +36,7 @@ def setup_collar_constraints():
         use_y=False
     )
 
-    add_copylocation_constraint(
+    add_copy_location_constraint(
         pose_bone=bone_mch_collar__target,
         target_bone=bone_ik_ctrl_hand,
         target_object=armature,
@@ -45,7 +45,7 @@ def setup_collar_constraints():
         influence=0.0
     )
 
-    add_copylocation_constraint(
+    add_copy_location_constraint(
         pose_bone=bone_mch_collar__target,
         target_bone=bone_ik_ctrl_hand,
         target_object=armature,

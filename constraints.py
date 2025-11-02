@@ -10,7 +10,7 @@ def add_damped_track_constraint(pose_bone, target_bone, target_object, head_tail
     dt.head_tail = head_tail
     dt.track_axis = track_axis
 
-def add_copylocation_constraint(pose_bone, target_bone, target_object, name = 'Copy Location', use_x = True, use_y = True, use_z = True, invert_x = False, invert_y = False, invert_z = False, use_offset = False, head_tail = 0.0, owner_space='LOCAL', target_space='LOCAL', influence = 1.0):
+def add_copy_location_constraint(pose_bone, target_bone, target_object, name ='Copy Location', use_x = True, use_y = True, use_z = True, invert_x = False, invert_y = False, invert_z = False, use_offset = False, head_tail = 0.0, owner_space='LOCAL', target_space='LOCAL', influence = 1.0):
     cl = pose_bone.constraints.new('COPY_LOCATION')
     cl.name = name
     cl.target = target_object
@@ -28,12 +28,12 @@ def add_copylocation_constraint(pose_bone, target_bone, target_object, name = 'C
     cl.influence = influence
 
 
-def add_limitrotation_constraint(pose_bone, euler_order='AUTO',
-                                 max_x=0.0, max_y=0.0, max_z=0.0,
-                                 min_x=0.0, min_y=0.0, min_z=0.0,
-                                 use_limit_x=False, use_limit_y=False, use_limit_z=False,
-                                 owner_space='LOCAL', target_space='LOCAL', influence = 1.0
-                                 ):
+def add_limit_rotation_constraint(pose_bone, euler_order='AUTO',
+                                  max_x=0.0, max_y=0.0, max_z=0.0,
+                                  min_x=0.0, min_y=0.0, min_z=0.0,
+                                  use_limit_x=False, use_limit_y=False, use_limit_z=False,
+                                  owner_space='LOCAL', target_space='LOCAL', influence = 1.0
+                                  ):
     lr = pose_bone.constraints.new('LIMIT_ROTATION')
     lr.euler_order = euler_order
     lr.max_x = max_x
@@ -49,13 +49,13 @@ def add_limitrotation_constraint(pose_bone, euler_order='AUTO',
     lr.target_space = target_space
     lr.influence = influence
 
-def add_copyrotation_constraint(pose_bone, target_bone, target_object,
-                                name = 'Copy Rotation',
-                                use_x = True, use_y = True, use_z = True,
-                                invert_x = False, invert_y = False, invert_z = False,
-                                mix_mode = 'REPLACE', use_offset = False, euler_order='AUTO',
-                                owner_space='LOCAL', target_space='LOCAL',
-                                influence = 1.0):
+def add_copy_rotation_constraint(pose_bone, target_bone, target_object,
+                                 name = 'Copy Rotation',
+                                 use_x = True, use_y = True, use_z = True,
+                                 invert_x = False, invert_y = False, invert_z = False,
+                                 mix_mode = 'REPLACE', use_offset = False, euler_order='AUTO',
+                                 owner_space='LOCAL', target_space='LOCAL',
+                                 influence = 1.0):
     cr = pose_bone.constraints.new('COPY_ROTATION')
     cr.name = name
     cr.target = target_object
