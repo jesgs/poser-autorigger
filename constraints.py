@@ -170,7 +170,7 @@ def add_ik_constraints(ik_target_name, chain: list[LiteralString], side:str = '.
     ik_constraint.enabled = True
 
 
-def add_copy_constraints(prefix_target, prefix_constraint):
+def add_copy_transforms_constraints(prefix_target, prefix_constraint, constraint_name:str = 'Copy Transforms'):
     armature = bpy.context.object
     bones = armature.pose.bones
 
@@ -184,7 +184,11 @@ def add_copy_constraints(prefix_target, prefix_constraint):
 
         # Add the constraint itself
         constraint = bones[constraint_bone_name].constraints.new('COPY_TRANSFORMS')
-        default_constraint_name = constraint.name
-        constraint.name = default_constraint_name + ' ' + bone.name
+        if constraint_name != 'Copy Transforms':
+            constraint.name = constraint.name + ' (' + constraint_name + ')'
+        else:
+            constraint.name = constraint_name
+
+        constraint.target = armature
         constraint.target = armature
         constraint.subtarget = bone.name

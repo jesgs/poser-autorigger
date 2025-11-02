@@ -7,6 +7,7 @@ from .create_eye_controls import create_eye_control_bones, setup_eye_tracking_co
 from .footroll import *
 from .shoulder_collar import *
 from .custom_properties import create_custom_properties
+from .drivers import create_and_add_drivers
 import bpy
 
 
@@ -91,11 +92,10 @@ def setup_poser_figure(objects):
             bpy.ops.object.editmode_toggle()  # we're done here
 
             bpy.ops.object.posemode_toggle() # pose mode now — setting up constraints.
-            create_custom_properties()
 
             # add constraints
-            add_copy_constraints('IK', 'FK')
-            add_copy_constraints('FK', 'DEF')
+            add_copy_transforms_constraints('IK', 'FK', 'From IK')
+            add_copy_transforms_constraints('FK', 'DEF', 'From FK')
             add_ik_constraints('CTRL-IK-Hand' , ['Forearm', 'Shoulder'], '.L', 'Elbow', 180)
             add_ik_constraints('IK-Foot' , ['Shin', 'Thigh'], '.L', 'Knee', 180)
             add_ik_constraints('CTRL-IK-LowerAbdomen', ['LowerAbdomen', 'Hip'], '', 'Hip', 90)
@@ -112,11 +112,14 @@ def setup_poser_figure(objects):
             setup_foot_roll_constraints()
             setup_eye_tracking_constraints()
 
+            create_custom_properties()
+
             bpy.ops.object.editmode_toggle()
             bpy.ops.armature.select_all(action='SELECT')
             bpy.ops.armature.symmetrize(direction="POSITIVE_X")
+            create_and_add_drivers()
             bpy.ops.object.posemode_toggle()
-            bpy.context.object.data.collections['Rigging'].is_visible = False
+            # bpy.context.object.data.collections['Rigging'].is_visible = False
             # bpy.ops.object.select_all(action='DESELECT')
 
     bpy.context.scene.transform_orientation_slots[0].type = 'GLOBAL'
@@ -232,7 +235,7 @@ def create_finger_control_bones():
             tail=fk_finger_bone.tail,
             length=0.025,
             bbone_size=fk_finger_bone.bbone_x * 3,
-            palette='THEME03',
+            palette='THEME09',
             parent=fk_fingers_ctrl,
             collection=fk_ctrl_collection
         )
