@@ -74,22 +74,26 @@ def create_mch_shoulder_bones_and_controls():
     bone_ik_collar_bone = edit_bones['IK-Collar.L']
     bone_ik_hand_bone = edit_bones['IK-Hand.L']
     bone_ik_ctrl_hand = edit_bones['CTRL-IK-Hand.L']
+    bone_def_chest = edit_bones['DEF-Chest']
 
     # create new bones
     bone_mch_collar_bone = edit_bones.new('MCH-Collar.L')
     bone_mch_collar_bone.display_type = 'OCTAHEDRAL'
+    bone_mch_collar_bone.parent = bone_def_chest
     assign_custom_color(bone_mch_collar_bone, bright_orange)
     bone_mch_collar_bone.select = True
     mch_shoulder_collection.assign(bone_mch_collar_bone)
 
     bone_mch_collar__damped_track = edit_bones.new('MCH-Collar-DampedTrack.L')
     bone_mch_collar__damped_track.display_type = 'STICK'
+    bone_mch_collar__damped_track.parent = bone_def_chest
     assign_custom_color(bone_mch_collar__damped_track, bright_yellow)
     bone_mch_collar__damped_track.select = True
     mch_shoulder_collection.assign(bone_mch_collar__damped_track)
 
     bone_mch_collar__target = edit_bones.new('MCH-Collar-Target.L')
     bone_mch_collar__target.display_type = 'OCTAHEDRAL'
+    bone_mch_collar__target.parent = edit_bones['root']
     assign_custom_color(bone_mch_collar__target, bright_orange)
     bone_mch_collar__target.select = True
     mch_shoulder_collection.assign(bone_mch_collar__target)

@@ -263,7 +263,8 @@ def create_finger_control_bones():
         length=0.025,
         bbone_size=0.002,
         palette='THEME09',
-        collection=ik_ctrl_collection
+        collection=ik_ctrl_collection,
+        parent=ik_fingers_ctrl
     )
     align_bone_to_source(ik_thumb_bone, thumb_bone)
 
@@ -296,6 +297,7 @@ def misc_bone_creation_cleanup():
 def create_spine_control_bones():
     edit_bones = bpy.context.object.data.edit_bones
     spine_ctrl_collection = bpy.context.object.data.collections_all.get('Spine CTRL')
+    root_bone = edit_bones['root']
 
     # create spine control bones
     bone_ctrl_torso = create_bone(
@@ -306,7 +308,8 @@ def create_spine_control_bones():
         tail=edit_bones['DEF-LowerAbdomen'].tail,
         palette='THEME09',
         display_type='OCTAHEDRAL',
-        collection=spine_ctrl_collection
+        collection=spine_ctrl_collection,
+        parent=root_bone
     )
 
     create_bone(

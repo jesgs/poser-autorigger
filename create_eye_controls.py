@@ -50,7 +50,7 @@ def create_eye_control_bones():
         head=[0, -0.25, bone_eye_left.head[2]],
         tail=[0, -0.27, bone_eye_left.head[2]],
         use_deform=False,
-        parent=None,
+        parent=edit_bones['DEF-Head'],
         bbone_size=bone_eye_left.bbone_x,
         custom_color=bright_blue,
         collection=collection
