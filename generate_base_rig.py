@@ -381,7 +381,6 @@ def create_ik_control_bones(chain: list[LiteralString], collection:BoneCollectio
 
 
 def create_leg_fkik_chains():
-    edit_bones = bpy.context.object.data.edit_bones
     legs_ik_collection = bpy.context.object.data.collections_all.get('Legs IK')
     legs_fk_collection = bpy.context.object.data.collections_all.get('Legs FK')
 
@@ -405,7 +404,6 @@ def create_leg_fkik_chains():
 
 
 def create_arm_fkik_chains():
-    edit_bones = bpy.context.object.data.edit_bones
     arms_ik_collection = bpy.context.object.data.collections_all.get('Arms IK')
     arms_fk_collection = bpy.context.object.data.collections_all.get('Arms FK')
 
@@ -429,7 +427,6 @@ def create_arm_fkik_chains():
 def create_spine_fkik_chains():
     spine_ik_collection = bpy.context.object.data.collections_all.get('Spine IK')
     spine_fk_collection = bpy.context.object.data.collections_all.get('Spine FK')
-    edit_bones = bpy.context.object.data.edit_bones
 
     # handle all fk/ik chains
     spine_fkik_bone_chain = [
@@ -595,7 +592,6 @@ def create_fkik_chains(bone_chains:list[str], parent:str = '', prefix:str = 'IK'
 
 
 def create_pelvis_bones():
-    pass
     # create pelvis and buttock bones but first rename the current buttock bones
     # edit_bones['Left_Buttock'].name = 'Left_Hip'
     # edit_bones['Right_Buttock'].name = 'Right_Hip'
@@ -608,6 +604,7 @@ def create_pelvis_bones():
     # bone_right_pelvis.parent = edit_bones['Hip']
     # bone_left_buttock.parent = bone_left_pelvis
     # bone_right_buttock.parent = bone_right_pelvis
+    pass
 
 
 def create_lower_abdomen_bone():

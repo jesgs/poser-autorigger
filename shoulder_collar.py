@@ -1,6 +1,6 @@
 from .constraints import add_damped_track_constraint, add_copylocation_constraint
 from .colorscheme import assign_custom_color, bright_orange, bright_yellow
-from .helpers import align_bone_to_source
+from .helpers import align_bone_to_source, create_bone
 import bpy
 
 def setup_collar_constraints():
@@ -71,32 +71,46 @@ def create_mch_shoulder_bones_and_controls():
     # grab existing bones for coordinates and alignment
     bpy.ops.armature.select_all(action='DESELECT')
 
+    # get references to bones that we either need to determine position for
+    # our MCH bones, or need to be parented to
     bone_ik_collar_bone = edit_bones['IK-Collar.L']
     bone_ik_hand_bone = edit_bones['IK-Hand.L']
     bone_ik_ctrl_hand = edit_bones['CTRL-IK-Hand.L']
     bone_def_chest = edit_bones['DEF-Chest']
 
     # create new bones
-    bone_mch_collar_bone = edit_bones.new('MCH-Collar.L')
-    bone_mch_collar_bone.display_type = 'OCTAHEDRAL'
-    bone_mch_collar_bone.parent = bone_def_chest
-    assign_custom_color(bone_mch_collar_bone, bright_orange)
+    bone_mch_collar_bone = create_bone(
+        edit_bones=edit_bones,
+        name='MCH-Collar.L',
+        parent=bone_def_chest,
+        display_type='OCTAHEDRAL',
+        palette='CUSTOM',
+        custom_color=bright_orange,
+        collection=mch_shoulder_collection,
+    )
     bone_mch_collar_bone.select = True
-    mch_shoulder_collection.assign(bone_mch_collar_bone)
 
-    bone_mch_collar__damped_track = edit_bones.new('MCH-Collar-DampedTrack.L')
-    bone_mch_collar__damped_track.display_type = 'STICK'
-    bone_mch_collar__damped_track.parent = bone_def_chest
-    assign_custom_color(bone_mch_collar__damped_track, bright_yellow)
+    bone_mch_collar__damped_track = create_bone(
+        edit_bones=edit_bones,
+        name='MCH-Collar-DampedTrack.L',
+        parent=bone_def_chest,
+        display_type='STICK',
+        palette='CUSTOM',
+        custom_color=bright_yellow,
+        collection=mch_shoulder_collection,
+    )
     bone_mch_collar__damped_track.select = True
-    mch_shoulder_collection.assign(bone_mch_collar__damped_track)
 
-    bone_mch_collar__target = edit_bones.new('MCH-Collar-Target.L')
-    bone_mch_collar__target.display_type = 'OCTAHEDRAL'
-    bone_mch_collar__target.parent = edit_bones['root']
-    assign_custom_color(bone_mch_collar__target, bright_orange)
+    bone_mch_collar__target = create_bone(
+        edit_bones=edit_bones,
+        name='MCH-Collar-Target.L',
+        parent=edit_bones['root'],
+        display_type='OCTAHEDRAL',
+        palette='CUSTOM',
+        custom_color=bright_orange,
+        collection=mch_shoulder_collection,
+    )
     bone_mch_collar__target.select = True
-    mch_shoulder_collection.assign(bone_mch_collar__target)
 
     edit_bones.active = bone_mch_collar__target
 
