@@ -1,11 +1,12 @@
 from typing import Literal
-from bpy.types import BoneCollection
-from .helpers import rename_all_bones, create_bone, move_bone_along_local_axis, align_bone_to_source
-from .colorscheme import assign_custom_color, bright_red, bright_orange, bright_yellow, bright_blue, bright_green
+from bpy.types import BoneCollection, PoseBone
+from .helpers import rename_all_bones, create_bone, move_bone_along_local_axis
+from .colorscheme import bright_green
 from .create_base import *
 from .create_eye_controls import create_eye_control_bones, setup_eye_tracking_constraints
 from .footroll import *
 from .shoulder_collar import *
+from .custom_properties import create_custom_properties
 import bpy
 
 
@@ -46,8 +47,7 @@ def setup_poser_figure(objects):
 
             fix_bones()
             create_root()
-            properties_bone = create_properties_bone()
-
+            create_properties_bone()
             create_lower_abdomen_bone()
             #create_pelvis_bones()
             rename_all_bones('DEF-')
@@ -91,6 +91,7 @@ def setup_poser_figure(objects):
             bpy.ops.object.editmode_toggle()  # we're done here
 
             bpy.ops.object.posemode_toggle() # pose mode now — setting up constraints.
+            create_custom_properties()
 
             # add constraints
             add_copy_constraints('IK', 'FK')
@@ -152,9 +153,7 @@ def fix_mesh(obj):
 
 def create_collections():
     collections = bpy.context.object.data.collections
-    root_collection = collections.new('Root')
-    root_collection.is_visible = False
-
+    collections.new('Root')
     face_collection = collections.new('Face')
     collections.new('Eyes CTRL', parent=face_collection)
 
