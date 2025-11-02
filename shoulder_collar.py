@@ -1,5 +1,5 @@
-from .constraints import add_damped_track_constraint, add_copy_location_constraint
-from .colorscheme import assign_custom_color, bright_orange, bright_yellow
+from .constraints import add_copy_location_constraint
+from .colorscheme import bright_orange, bright_yellow
 from .helpers import align_bone_to_source, create_bone
 import bpy
 

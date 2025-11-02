@@ -77,3 +77,47 @@ def move_bone_along_local_axis(bone: EditBone, distance:float):
     bone.head += translation_vector
     bone.tail += translation_vector
 
+
+def create_fkik_chains(bone_chains:list[str], parent:str = '', prefix:str = 'IK', suffix:str ='.L',
+                       palette:Literal["DEFAULT", "THEME01", "THEME02", "THEME03", "THEME04", "THEME05", "THEME06", "THEME07", "THEME08", "THEME09", "THEME10", "THEME11", "THEME12", "THEME13", "THEME14", "THEME15", "THEME16", "THEME17", "THEME18", "THEME19", "THEME20", "CUSTOM"] = 'THEME01',
+                       bone_size:float = 0.002, use_connect:bool = False) -> list[EditBone]:
+    edit_bones = bpy.context.object.data.edit_bones
+
+    fkik_chains = []
+    completed_fkik_chains = []
+    for bc in bone_chains:
+        for bone in edit_bones:
+            deform_bone_name = 'DEF-' + bc + suffix
+            if bone.name.find(bc) == -1:
+                continue
+
+            if deform_bone_name != bone.name:
+                continue
+
+            bone_name = bone.name
+            fkik_bone_name = bone_name.replace('DEF', prefix)
+            fkik_chains.append(fkik_bone_name)
+
+    for i, fkik_chain_item in enumerate(fkik_chains):
+        # parenting
+        if 0 == i:
+            fkik_bone_parent = edit_bones[parent]
+        else:
+            fkik_bone_parent = edit_bones[fkik_chains[i - 1]]
+
+        connect_bone = use_connect and 0 != i
+        deform_bone_name = fkik_chain_item.replace(prefix, 'DEF')
+        fkik_bone = create_bone(
+            edit_bones=edit_bones,
+            name=fkik_chain_item,
+            parent=fkik_bone_parent,
+            palette=palette,
+            head=edit_bones[deform_bone_name].head,
+            tail=edit_bones[deform_bone_name].tail,
+            bbone_size=bone_size,
+            use_connect=connect_bone,
+        )
+
+        completed_fkik_chains.append(fkik_bone)
+
+    return completed_fkik_chains

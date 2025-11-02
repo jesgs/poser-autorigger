@@ -1,5 +1,6 @@
 import bpy
-from .constraints import *
+import math
+from .constraints import add_transformation_constraint, add_copy_location_constraint, add_limit_rotation_constraint
 from .helpers import create_bone
 from .colorscheme import bright_blue
 
