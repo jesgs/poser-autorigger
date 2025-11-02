@@ -115,8 +115,8 @@ def create_mch_shoulder_bones_and_controls():
         palette='CUSTOM',
         custom_color=bright_orange,
         collection=mch_shoulder_collection,
-        head=bone_mch_collar__damped_track.tail,
-        tail=[bone_mch_collar__damped_track.tail[0], 0.1, bone_mch_collar__damped_track.tail[2]],
+        head=[0.0, 0.0, 0.0],
+        tail=[0.0, 0.0, 0.0],
     )
     bone_mch_collar__target.select = True
 
@@ -124,6 +124,9 @@ def create_mch_shoulder_bones_and_controls():
 
     # align damped track bone to collar bone
     align_bone_to_source(bone_mch_collar__damped_track, bone_ik_collar_bone)
+
+    bone_mch_collar__target.head = bone_mch_collar__damped_track.tail
+    bone_mch_collar__target.tail = [bone_mch_collar__damped_track.tail[0], 0.1, bone_mch_collar__damped_track.tail[2]]
 
     # align target bone to ik control
     align_bone_to_source(bone_mch_collar__target, bone_ik_ctrl_hand)
