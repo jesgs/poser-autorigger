@@ -1,16 +1,17 @@
-from typing import LiteralString
+from typing import LiteralString, Literal
+from bpy.types import PoseBone
 import math
 import bpy
 
 
-def add_damped_track_constraint(pose_bone, target_bone, target_object, head_tail=0.0, track_axis='TRACK_X'):
+def add_damped_track_constraint(pose_bone: PoseBone, target_bone, target_object, head_tail=0.0, track_axis='TRACK_X'):
     dt = pose_bone.constraints.new('DAMPED_TRACK')
     dt.subtarget = target_bone
     dt.target = target_object
     dt.head_tail = head_tail
     dt.track_axis = track_axis
 
-def add_copy_location_constraint(pose_bone, target_bone, target_object, name ='Copy Location', use_x = True, use_y = True, use_z = True, invert_x = False, invert_y = False, invert_z = False, use_offset = False, head_tail = 0.0, owner_space='LOCAL', target_space='LOCAL', influence = 1.0):
+def add_copy_location_constraint(pose_bone: PoseBone, target_bone, target_object, name ='Copy Location', use_x = True, use_y = True, use_z = True, invert_x = False, invert_y = False, invert_z = False, use_offset = False, head_tail = 0.0, owner_space='LOCAL', target_space='LOCAL', influence = 1.0):
     cl = pose_bone.constraints.new('COPY_LOCATION')
     cl.name = name
     cl.target = target_object
@@ -28,11 +29,12 @@ def add_copy_location_constraint(pose_bone, target_bone, target_object, name ='C
     cl.influence = influence
 
 
-def add_limit_rotation_constraint(pose_bone, euler_order='AUTO',
+def add_limit_rotation_constraint(pose_bone: PoseBone, euler_order='AUTO',
                                   max_x=0.0, max_y=0.0, max_z=0.0,
                                   min_x=0.0, min_y=0.0, min_z=0.0,
                                   use_limit_x=False, use_limit_y=False, use_limit_z=False,
-                                  owner_space='LOCAL', target_space='LOCAL', influence = 1.0
+                                  owner_space:Literal["WORLD", "CUSTOM", "POSE", "LOCAL_WITH_PARENT", "LOCAL"]='LOCAL',
+                                  target_space:Literal["WORLD", "CUSTOM", "POSE", "LOCAL_WITH_PARENT", "LOCAL", "LOCAL_OWNER_ORIENT"]='LOCAL', influence = 1.0
                                   ):
     lr = pose_bone.constraints.new('LIMIT_ROTATION')
     lr.euler_order = euler_order
@@ -48,6 +50,30 @@ def add_limit_rotation_constraint(pose_bone, euler_order='AUTO',
     lr.owner_space = owner_space
     lr.target_space = target_space
     lr.influence = influence
+
+def add_limit_scale_constraint(pose_bone: PoseBone,
+                               max_x=0.0, max_y=0.0, max_z=0.0,
+                               min_x=0.0, min_y=0.0, min_z=0.0,
+                               use_max_x=False, use_max_y=False, use_max_z=False,
+                               use_min_x=False, use_min_y=False, use_min_z=False,
+                               use_transform_limit=False,
+                               owner_space:Literal["WORLD", "CUSTOM", "POSE", "LOCAL_WITH_PARENT", "LOCAL"]='LOCAL'
+                               ):
+    ls = pose_bone.constraints.new('LIMIT_SCALE')
+    ls.max_x = max_x
+    ls.max_y = max_y
+    ls.max_z = max_z
+    ls.min_x = min_x
+    ls.min_y = min_y
+    ls.min_z = min_z
+    ls.use_transform_limit = use_transform_limit
+    ls.use_max_x = use_max_x
+    ls.use_max_y = use_max_y
+    ls.use_max_z = use_max_z
+    ls.use_min_x = use_min_x
+    ls.use_min_y = use_min_y
+    ls.use_min_z = use_min_z
+    ls.owner_space=owner_space
 
 def add_copy_rotation_constraint(pose_bone, target_bone, target_object,
                                  name = 'Copy Rotation',
@@ -81,7 +107,9 @@ def add_transformation_constraint(pose_bone, target_bone, target_object,
                                   from_min_x=0.0, from_min_x_rot=0.0, from_min_x_scale=0.0,
                                   from_min_y=0.0, from_min_y_rot=0.0, from_min_y_scale=0.0,
                                   from_min_z=0.0, from_min_z_rot=0.0, from_min_z_scale=0.0,
-                                  from_rotation_mode='AUTO', map_from='LOCATION', map_to='LOCATION',
+                                  from_rotation_mode='AUTO',
+                                  map_from:Literal['LOCATION', 'ROTATION', 'SCALE']='LOCATION',
+                                  map_to:Literal['LOCATION', 'ROTATION', 'SCALE']='LOCATION',
                                   map_to_x_from='X', map_to_y_from='Y', map_to_z_from='Z',
                                   mix_mode='ADD', mix_mode_rot='ADD', mix_mode_scale='REPLACE',
                                   to_max_x=0.0, to_max_x_rot=0.0, to_max_x_scale=0.0,
@@ -91,7 +119,7 @@ def add_transformation_constraint(pose_bone, target_bone, target_object,
                                   to_min_y=0.0, to_min_y_rot=0.0, to_min_y_scale=0.0,
                                   to_min_z=0.0, to_min_z_rot=0.0, to_min_z_scale=0.0,
                                   to_euler_order = 'AUTO', name = 'Transformation',
-                                  target_space = 'WORLD', owner_space = 'WORLD'):
+                                  target_space = 'LOCAL', owner_space = 'LOCAL'):
 
     transform = pose_bone.constraints.new('TRANSFORM')
     transform.name = name
@@ -148,7 +176,7 @@ def add_transformation_constraint(pose_bone, target_bone, target_object,
 
 
 
-def add_ik_constraints(ik_target_name, chain: list[LiteralString], side:str = '.L', pole_name:str = None, pole_angle:float = 180):
+def add_ik_constraints(ik_target_name, chain: list[LiteralString], side:str = '.L', pole_name:str = None, pole_angle:float = 180, influence:float = 1.0):
     armature = bpy.context.object
     bones = armature.pose.bones
 
@@ -167,13 +195,40 @@ def add_ik_constraints(ik_target_name, chain: list[LiteralString], side:str = '.
         ik_constraint.pole_angle = math.radians(pole_angle)
         ik_constraint.pole_subtarget = ik_pole_bone.name
 
+    ik_constraint.influence = influence
     ik_constraint.enabled = True
 
 
-def add_copy_transforms_constraints(prefix_target, prefix_constraint, constraint_name:str = 'Copy Transforms'):
+def add_copy_transforms_constraints(prefix_target, prefix_constraint, constraint_name:str = 'Copy Transforms', influence:float = 1.0):
     armature = bpy.context.object
     bones = armature.pose.bones
+    thumb_fkik_chain = [
+        'Thumb_1',
+        'Thumb_2',
+        'Thumb_3',
+    ]
+    index_fkik_chain = [
+        'Index_1',
+        'Index_2',
+        'Index_3',
+    ]
+    mid_fkik_chain = [
+        'Mid_1',
+        'Mid_2',
+        'Mid_3',
+    ]
+    ring_fkik_chain = [
+        'Ring_1',
+        'Ring_2',
+        'Ring_3',
+    ]
+    pinky_fkik_chain = [
+        'Pinky_1',
+        'Pinky_2',
+        'Pinky_3',
+    ]
 
+    exclude = thumb_fkik_chain + index_fkik_chain + mid_fkik_chain + ring_fkik_chain + pinky_fkik_chain
     for bone in bones:
         if not bone.name.startswith(prefix_target):
             continue
@@ -192,3 +247,10 @@ def add_copy_transforms_constraints(prefix_target, prefix_constraint, constraint
         constraint.target = armature
         constraint.target = armature
         constraint.subtarget = bone.name
+        constraint.influence = influence
+
+        # turn off copy constraint on finger bones
+        for n in exclude:
+            if n in bone.name and bone.name.startswith('IK'):
+                constraint.influence = 0.0
+

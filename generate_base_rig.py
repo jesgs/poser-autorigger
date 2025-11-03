@@ -4,7 +4,7 @@ from .colorscheme import bright_green, bright_blue
 from .create_base import create_root, create_properties_bone
 from .footroll import create_foot_roll_control_bones, setup_foot_roll_constraints
 from .shoulder_collar import create_mch_shoulder_bones_and_controls, setup_collar_constraints
-from .fingers import create_finger_control_bones, create_finger_fkik_chains
+from .fingers import create_finger_control_bones, create_finger_fkik_chains, create_finger_fk_ctrl_constraints
 from .create_eye_controls import create_eye_control_bones, setup_eye_tracking_constraints
 from .custom_properties import create_custom_properties
 from .constraints import add_copy_transforms_constraints, add_ik_constraints
@@ -94,10 +94,16 @@ def setup_poser_figure(objects):
             bpy.ops.object.editmode_toggle()  # we're done here
 
             bpy.ops.object.posemode_toggle() # pose mode now — setting up constraints.
+            # change all bones to XYZ euler
+            pose_bones = armature.pose.bones
+            for bone in pose_bones:
+                bone.rotation_mode = 'XYZ'
 
             # add constraints
+            create_finger_fk_ctrl_constraints()
             add_copy_transforms_constraints('IK', 'FK', 'From IK')
             add_copy_transforms_constraints('FK', 'DEF', 'From FK')
+
             add_ik_constraints('CTRL-IK-Hand' , ['Forearm', 'Shoulder'], '.L', 'Elbow', 180)
             add_ik_constraints('IK-Foot' , ['Shin', 'Thigh'], '.L', 'Knee', 180)
             add_ik_constraints('CTRL-IK-LowerAbdomen', ['LowerAbdomen', 'Hip'], '', 'Hip', 90)

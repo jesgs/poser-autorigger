@@ -1,4 +1,6 @@
 from .helpers import create_fkik_chains, create_bone, move_bone_along_local_axis, align_bone_to_source
+from .constraints import add_limit_scale_constraint, add_copy_rotation_constraint, add_limit_rotation_constraint, add_transformation_constraint
+from bpy.types import PoseBone
 import bpy
 
 def create_finger_fkik_chains():
@@ -157,5 +159,120 @@ def create_finger_control_bones():
     align_bone_to_source(ik_thumb_bone, thumb_bone)
 
 
-def create_finger_ctrl_constraints():
-    pass
+def create_finger_fk_ctrl_constraints():
+    armature = bpy.context.object
+    bones = armature.pose.bones
+
+    thumb_fkik_chain = [
+        'Thumb_1',
+        'Thumb_2',
+        'Thumb_3',
+    ]
+    index_fkik_chain = [
+        'Index_1',
+        'Index_2',
+        'Index_3',
+    ]
+    mid_fkik_chain = [
+        'Mid_1',
+        'Mid_2',
+        'Mid_3',
+    ]
+    ring_fkik_chain = [
+        'Ring_1',
+        'Ring_2',
+        'Ring_3',
+    ]
+    pinky_fkik_chain = [
+        'Pinky_1',
+        'Pinky_2',
+        'Pinky_3',
+    ]
+
+    finger_fk_ctrls = [
+        'CTRL-FK-Thumb.L',
+        'CTRL-FK-Index.L',
+        'CTRL-FK-Mid.L',
+        'CTRL-FK-Ring.L',
+        'CTRL-FK-Pinky.L',
+    ]
+
+    for ctrl_bone in finger_fk_ctrls:
+        for i,bone in enumerate(bones):
+            if ctrl_bone in bone.name:
+                add_limit_scale_constraint_to_ctrl_bone(bone)
+
+            finger_bone_chain, side = ctrl_bone.replace('CTRL-', '').split('.')
+            if finger_bone_chain in bone.name and side in bone.name and 'CTRL-' not in bone.name:
+                finger_bone_item, finger_bone_position = bone.name.replace('.L', '').split('_')
+                if 'FK-Thumb' in bone.name:
+                    fk_thumb_constraints(armature, bone, bones, ctrl_bone, finger_bone_position, i)
+
+                if 'FK-Index' in bone.name:
+                    if 1 == int(finger_bone_position):
+                        pass
+
+
+def fk_thumb_constraints(armature, bone: PoseBone, bones, ctrl_bone: str,
+                         finger_bone_position: str, i: int):
+
+    finger_bone = bones[bone.name]
+    if 1 == int(finger_bone_position):
+        add_copy_rotation_constraint(finger_bone, bones[ctrl_bone], armature, mix_mode='ADD')
+        add_limit_rotation_constraint(
+            pose_bone=finger_bone,
+            min_x=-0.5235987756,
+            max_x=0.174533,
+            min_y=-0.174533,
+            max_y=-0.174533,
+            min_z=-0.52359875,
+            max_z=0.174533,
+            use_limit_x=True,
+            use_limit_y=True,
+            use_limit_z=True,
+        )
+
+    if 2 == int(finger_bone_position):
+        add_transformation_constraint(
+            pose_bone=finger_bone,
+            target_bone=bones[ctrl_bone],
+            target_object=armature,
+            map_from='SCALE',
+            map_to='ROTATION',
+            from_min_y_scale=0.25,
+            from_max_y_scale=1.0,
+            map_to_z_from='Y',
+            to_min_z_rot=62.2,
+            to_max_z_rot=0.0
+        )
+
+    if 3 == int(finger_bone_position):
+        add_transformation_constraint(
+            pose_bone=finger_bone,
+            target_bone=bones[i - 1],
+            target_object=armature,
+            map_from='ROTATION',
+            map_to='ROTATION',
+            from_min_z_rot=0,
+            from_max_z_rot=25.0,
+            map_to_y_from='Z',
+            map_to_z_from='Z',
+            to_min_y_rot=0.0,
+            to_max_y_rot=30.0,
+            to_min_z_rot=0,
+            to_max_z_rot=73.0
+        )
+
+
+def add_limit_scale_constraint_to_ctrl_bone(bone: PoseBone):
+    bone.lock_location[0] = bone.lock_location[1] = bone.lock_location[2] = True
+    bone.lock_rotation[0] = bone.lock_rotation[1] = True
+    bone.lock_scale[0] = bone.lock_scale[2] = True
+
+    add_limit_scale_constraint(
+        pose_bone=bone,
+        min_y=0.25,
+        max_y=1.0,
+        use_min_y=True,
+        use_max_y=True,
+    )
