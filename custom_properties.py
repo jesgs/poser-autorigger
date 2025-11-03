@@ -8,7 +8,7 @@ def create_custom_properties():
     # ik/fk switching
     properties_bone['arms_fkik'] = [1.0, 1.0]
     properties_bone['legs_fkik'] = [1.0, 1.0]
-    properties_bone['spine_fkik'] = [1.0, 1.0]
+    properties_bone['spine_fkik'] = 1.0
     properties_bone['fingers_fkik_l'] = [1.0, 1.0, 1.0, 1.0, 1.0]
     properties_bone['fingers_fkik_r'] = [1.0, 1.0, 1.0, 1.0, 1.0]
 

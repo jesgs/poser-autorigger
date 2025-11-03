@@ -8,7 +8,7 @@ from .fingers import create_finger_control_bones, create_finger_fkik_chains, cre
 from .create_eye_controls import create_eye_control_bones, setup_eye_tracking_constraints
 from .custom_properties import create_custom_properties
 from .constraints import add_copy_transforms_constraints, add_ik_constraints
-from .drivers import create_and_add_drivers
+from .drivers import create_limb_fkik_switch_drivers, create_spine_fkik_switch_drivers, create_finger_fkik_switch_drivers
 from .helpers import rename_all_bones, create_bone, create_fkik_chains, assign_custom_color
 import bpy
 
@@ -126,9 +126,20 @@ def setup_poser_figure(objects):
             bpy.ops.armature.select_all(action='SELECT')
             bpy.ops.armature.symmetrize(direction="POSITIVE_X")
             bpy.ops.armature.select_all(action='DESELECT')
-            create_and_add_drivers()
+            create_spine_fkik_switch_drivers(['FK-Hip', 'FK-LowerAbdomen', 'FK-Abdomen', 'FK-Chest', 'FK-Neck', 'FK-Head'], 'spine_fkik')
+            create_limb_fkik_switch_drivers(['FK-Hand', 'FK-Forearm', 'FK-Shoulder', 'FK-Collar'], 'arms_fkik')
+            create_limb_fkik_switch_drivers(['FK-Foot', 'FK-Shin', 'FK-Thigh', 'FK-Buttock'], 'legs_fkik')
+            create_finger_fkik_switch_drivers('fingers_fkik')
             bpy.ops.object.posemode_toggle()
             bpy.context.object.data.collections['Rigging'].is_visible = False
+
+    # force-update drivers
+    # todo — remove the hard-coded reference to armature name
+    armature = bpy.data.objects.get('Armature')
+    for fcurve in armature.animation_data.drivers:
+        original_expression = fcurve.driver.expression
+        fcurve.driver.expression += " "
+        fcurve.driver.expression = original_expression
 
     bpy.context.scene.transform_orientation_slots[0].type = 'GLOBAL'
     bpy.context.scene.tool_settings.transform_pivot_point = 'MEDIAN_POINT'
