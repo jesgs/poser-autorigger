@@ -101,8 +101,8 @@ def setup_poser_figure(objects):
 
             # add constraints
             create_finger_fk_ctrl_constraints()
-            add_copy_transforms_constraints('IK', 'FK', 'From IK')
-            add_copy_transforms_constraints('FK', 'DEF', 'From FK')
+            add_copy_transforms_constraints('IK', 'FK', 'Copy Transforms (IK)')
+            add_copy_transforms_constraints('FK', 'DEF', 'Copy Transforms (FK)')
 
             add_ik_constraints('CTRL-IK-Hand' , ['Forearm', 'Shoulder'], '.L', 'Elbow', 180)
             add_ik_constraints('IK-Foot' , ['Shin', 'Thigh'], '.L', 'Knee', 180)
@@ -125,10 +125,10 @@ def setup_poser_figure(objects):
             bpy.ops.object.editmode_toggle()
             bpy.ops.armature.select_all(action='SELECT')
             bpy.ops.armature.symmetrize(direction="POSITIVE_X")
+            bpy.ops.armature.select_all(action='DESELECT')
             create_and_add_drivers()
             bpy.ops.object.posemode_toggle()
-            # bpy.context.object.data.collections['Rigging'].is_visible = False
-            # bpy.ops.object.select_all(action='DESELECT')
+            bpy.context.object.data.collections['Rigging'].is_visible = False
 
     bpy.context.scene.transform_orientation_slots[0].type = 'GLOBAL'
     bpy.context.scene.tool_settings.transform_pivot_point = 'MEDIAN_POINT'

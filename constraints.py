@@ -239,10 +239,7 @@ def add_copy_transforms_constraints(prefix_target, prefix_constraint, constraint
 
         # Add the constraint itself
         constraint = bones[constraint_bone_name].constraints.new('COPY_TRANSFORMS')
-        if constraint_name != 'Copy Transforms':
-            constraint.name = constraint.name + ' (' + constraint_name + ')'
-        else:
-            constraint.name = constraint_name
+        constraint.name = constraint_name
 
         constraint.target = armature
         constraint.target = armature
