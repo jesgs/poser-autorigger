@@ -205,12 +205,51 @@ def create_finger_fk_ctrl_constraints():
             finger_bone_chain, side = ctrl_bone.replace('CTRL-', '').split('.')
             if finger_bone_chain in bone.name and side in bone.name and 'CTRL-' not in bone.name:
                 finger_bone_item, finger_bone_position = bone.name.replace('.L', '').split('_')
+                finger_bone = bones[bone.name]
                 if 'FK-Thumb' in bone.name:
                     fk_thumb_constraints(armature, bone, bones, ctrl_bone, finger_bone_position, i)
 
-                if 'FK-Index' in bone.name:
+                if finger_bone_item in ['FK-Index', 'FK-Mid', 'FK-Ring', 'FK-Pinky']:
                     if 1 == int(finger_bone_position):
-                        pass
+                        add_copy_rotation_constraint(
+                            pose_bone=finger_bone,
+                            target_bone=bones[ctrl_bone],
+                            target_object=armature,
+                            name='Copy Rotation (Side-Side)',
+                            use_y=False,
+                            mix_mode='ADD'
+                        )
+                        add_transformation_constraint(
+                            pose_bone=finger_bone,
+                            target_bone=bones[ctrl_bone],
+                            target_object=armature,
+                            name='Transformation (Curl)',
+                            map_from='SCALE',
+                            from_min_y_scale=0.25,
+                            from_max_y_scale=1.0,
+                            map_to='ROTATION',
+                            map_to_x_from='Y',
+                            to_min_x_rot=-70.0,
+                            to_max_x_rot=0,
+                            mix_mode='ADD'
+                        )
+                    if 2 == int(finger_bone_position):
+                        add_copy_rotation_constraint(
+                            pose_bone=finger_bone,
+                            target_bone=bones[i - 1],
+                            target_object=armature,
+                            use_y=False,
+                            use_z=False,
+                        )
+                    if 3 == int(finger_bone_position):
+                        add_copy_rotation_constraint(
+                            pose_bone=finger_bone,
+                            target_bone=bones[i - 1],
+                            target_object=armature,
+                            use_y=False,
+                            use_z=False,
+                        )
+
 
 
 def fk_thumb_constraints(armature, bone: PoseBone, bones, ctrl_bone: str,
