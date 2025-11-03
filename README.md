@@ -13,6 +13,10 @@ This auto-rigging tool is geared specifically towards FBX imported figures that 
 3. Addon detects the armature, generates required IK/FK chains, creates controls, and assigns custom shapes.
 4. Rig is ready for animation with standard Blender controls.
 
+## TODOs
+
+- Determine if mesh correction code should be removed or expanded. This code is actually part of [Poser Tools](https://github.com/jesgs/poser-tools).
+
 
 ## Base Feature Set for Poser FBX Auto-Rigger in Blender
 
@@ -21,7 +25,6 @@ This auto-rigging tool is geared specifically towards FBX imported figures that 
   - Detect existing limb bones (shoulder, upper arm, forearm, hand, thigh, shin, foot).
   - Generate IK chains for arms and legs.
   - Generate FK chains for arms and legs.
-  - Setup seamless IK/FK switching (custom properties, drivers, constraints).
 - **Fingers:**
   - Detect finger bones.
   - Create FK controls for each finger.
