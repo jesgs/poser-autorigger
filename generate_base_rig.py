@@ -10,6 +10,7 @@ from .custom_properties import create_custom_properties
 from .constraints import add_copy_transforms_constraints, add_ik_constraints
 from .drivers import create_limb_fkik_switch_drivers, create_spine_fkik_switch_drivers, create_finger_fkik_switch_drivers
 from .helpers import rename_all_bones, create_bone, create_fkik_chains, assign_custom_color
+from .custom_shapes import import_custom_shapes, assign_all_custom_shapes
 import bpy
 
 
@@ -36,7 +37,7 @@ def setup_poser_figure(objects):
             # maybe we could also change display to b-bone or stick?
             obj.show_in_front = True
             obj.display_type = 'WIRE'
-
+            import_custom_shapes(obj.name)
             bpy.ops.object.editmode_toggle()  # go into edit mode
             bpy.context.object.data.display_type = 'BBONE'
 
@@ -98,6 +99,8 @@ def setup_poser_figure(objects):
             pose_bones = armature.pose.bones
             for bone in pose_bones:
                 bone.rotation_mode = 'XYZ'
+
+            assign_all_custom_shapes(armature)
 
             # add constraints
             create_finger_fk_ctrl_constraints()
