@@ -1,9 +1,12 @@
+# START — workflow remove
 _needs_reload = "bpy" in locals()
+# END — workflow remove
 
 import bpy
 from .panels import RigPoserArmature_PT_Panel
 from .operators import OT_GenerateBaseRig_Operator
 
+# START — workflow remove
 if _needs_reload:
     import sys, importlib
     from .panels import RigPoserArmature_PT_Panel
@@ -15,7 +18,7 @@ if _needs_reload:
     for k, v in all_modules.items():
         if k.startswith(__name__):
             importlib.reload(v)
-
+# END — workflow remove
 
 
 bl_info = {
