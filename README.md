@@ -3,6 +3,7 @@
 An autorigger for Poser characters imported as FBX files.
 
 This auto-rigging tool is geared specifically towards FBX imported figures that already have an existing base armature. This tool takes that existing armature and automates the setup of IK/FK chains, bone collections, and bone widgets.
+This tool adds a deformer bone to the spine chain called `LowerAbdomen` but it does not create a weight-group. This weight-group will need to be created manually and blended with the hip and abdomen weight-groups. 
 
 **Under development—Use at your own risk**
 
@@ -19,6 +20,20 @@ This auto-rigging tool is geared specifically towards FBX imported figures that 
   - Move to Poser Tools. We can bring it back later or merge the two add-ons.
 - [ ] Rig UI panel ideas: built-in but still provides support for [Bone Manager](https://fin.gumroad.com/l/STdb) and [Rig UI](https://superhivemarket.com/products/rig-ui)
 - [ ] Test against other Poser figures (Daz3d Millennium 4 figures, La Femme and Le Homme, AnimeDoll, etc.)
+
+Below are some ideas that could be handled by user before the control rig is generated. Rig generation process would automatically detect these bones and add controls as needed. 
+The process to create the `LowerAbdomen` bone and reposition the `Body` bone and rename it `root` could also be optionally left to the user.
+- [ ] Add option to modify hip/buttock bones into a full pelvis setup. This process should run before bones are renamed, similar to how LowerAbdomen is created.
+  - `Left_Buttock` and `Right_Buttock` are renamed to `Left_Hip` and `Right_Hip`
+  - Create `Left_Pelvis` and parent it to the main `Hip` bone. Position the head of each bone to align with the head of the `Hip` bone
+    - Align x-axis of the tail of `Left_Pelvis` with the head of `Left_Hip` (`Left_Hip` head.x - ~0.0096)
+    - Align y-axis of the tail of `Left_Pelvis` with the head of `Left_Hip` (`Left_Hip` head.y + ~-0.0474)
+    - Align z-axis of the tail of `Left_Pelvis` with the head of `Left_Hip` (`Left_Hip` head.z + ~0.052)
+  - Create `Left_Buttock` and parent it to `Left_Pelvis`. Head of `Left_Buttock` should be aligned with tail of `Left_Pelvis`. Position tail of `Left_Buttock`:
+    - `Left_Buttock` tail.x = `Left_Pelvis` head.x - 0.035
+    - `Left_Buttock` tail.y = `Left_Pelvis` head.y + -0.16
+    - `Left_Buttock` tail.z = `Left_Pelvix` head.z - 0.0603
+- [ ] Add option to create breast/pectoral deforming bones.
 
 ## Base Feature Set for Poser FBX Auto-Rigger in Blender
 
