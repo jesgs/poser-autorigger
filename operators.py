@@ -9,11 +9,8 @@ class OT_GenerateBaseRig_Operator(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        if len(context.scene.objects) == 0:
-            return False
-
-        return True
+        return context.active_object is not None and context.active_object.type == 'ARMATURE'
 
     def execute(self, context):
-        setup_poser_figure(context.selected_objects)
+        setup_poser_figure(context.active_object)
         return {'FINISHED'}

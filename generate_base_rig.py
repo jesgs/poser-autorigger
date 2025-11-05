@@ -1,5 +1,5 @@
 from typing import Literal, LiteralString
-from bpy.types import BoneCollection
+from bpy.types import BoneCollection, Object
 from .colorscheme import bright_green, bright_blue
 from .create_base import create_root, create_properties_bone
 from .footroll import create_foot_roll_control_bones, setup_foot_roll_constraints
@@ -15,7 +15,7 @@ import bpy
 
 
 
-def setup_poser_figure(objects):
+def setup_poser_figure(armature: Object):
     # Before deselecting everything, apply scale/rotation
     # Poser's scale is 1/100 smaller than Blender, plus rotation is different as well
     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
@@ -24,126 +24,112 @@ def setup_poser_figure(objects):
     bpy.context.scene.transform_orientation_slots[0].type = 'NORMAL'
     bpy.context.scene.tool_settings.transform_pivot_point = 'INDIVIDUAL_ORIGINS'
 
-    for obj in objects:
-        bpy.context.view_layer.objects.active = bpy.context.view_layer.objects[obj.name]
-        bpy.context.active_object.select_set(state=True)
+    bpy.context.view_layer.objects.active = bpy.context.view_layer.objects[armature.name]
+    bpy.context.active_object.select_set(state=True)
 
-        if obj.type == 'MESH':
-            # check if mesh is parented to an armature
-            if obj.parent.type == 'ARMATURE':
-                fix_mesh(obj)
+    # maybe we could also change display to b-bone or stick?
+    armature.show_in_front = True
+    armature.display_type = 'WIRE'
+    import_custom_shapes(armature.name)
+    bpy.ops.object.editmode_toggle()  # go into edit mode
+    bpy.context.object.data.display_type = 'BBONE'
 
-        if obj.type == 'ARMATURE':
-            # maybe we could also change display to b-bone or stick?
-            obj.show_in_front = True
-            obj.display_type = 'WIRE'
-            import_custom_shapes(obj.name)
-            bpy.ops.object.editmode_toggle()  # go into edit mode
-            bpy.context.object.data.display_type = 'BBONE'
+    create_collections()
+    collections = armature.data.collections_all
 
-            armature = bpy.context.object
+    # fix some issues with bones coming from Poser
+    edit_bones = armature.data.edit_bones
 
-            create_collections()
-            collections = armature.data.collections_all
+    fix_bones()
+    create_root()
+    create_properties_bone()
+    create_lower_abdomen_bone()
+    #create_pelvis_bones()
+    rename_all_bones('DEF-')
 
-            # fix some issues with bones coming from Poser
-            edit_bones = armature.data.edit_bones
+    # put all DEF bones in their respective collection
+    def_collection = collections.get('DEF')
+    for bone in edit_bones:
+        if 'DEF-' in bone.name:
+            def_collection.assign(bone)
 
-            fix_bones()
-            create_root()
-            create_properties_bone()
-            create_lower_abdomen_bone()
-            #create_pelvis_bones()
-            rename_all_bones('DEF-')
+    bpy.ops.armature.select_all(action='SELECT')
+    bpy.ops.armature.calculate_roll(type='GLOBAL_POS_Z')
 
-            # put all DEF bones in their respective collection
-            def_collection = collections.get('DEF')
-            for bone in edit_bones:
-                if 'DEF-' in bone.name:
-                    def_collection.assign(bone)
+    create_spine_fkik_chains()
+    create_arm_fkik_chains()
+    create_leg_fkik_chains()
+    create_finger_fkik_chains()
+    arms_ik_collection = collections.get('Arms CTRL')
+    legs_ik_collection = collections.get('Legs CTRL')
+    spine_ik_collection = collections.get('Spine CTRL')
+    create_ik_control_bones(collection=arms_ik_collection, chain=['Hand', 'Forearm', 'Shoulder',], side='.L', pole_name='Elbow')
+    create_ik_control_bones(collection=legs_ik_collection, chain=['Foot', 'Shin', 'Thigh',], side='.L', pole_name='Knee', y_axis_position=-0.625, z_position_by='head')
+    create_ik_control_bones(collection=spine_ik_collection, chain=['LowerAbdomen', 'Hip',], pole_name='Hip')
+    create_ik_control_bones(collection=spine_ik_collection, chain=['Chest', 'Abdomen', ], pole_name='Chest')
+    create_ik_control_bones(collection=spine_ik_collection, chain=['Head', 'Neck',], pole_name='Head', y_axis_position=0.5)
+    create_mch_shoulder_bones_and_controls()
+    create_spine_control_bones()
+    create_finger_control_bones()
+    create_foot_roll_control_bones()
+    create_eye_control_bones()
 
-            bpy.ops.armature.select_all(action='SELECT')
-            bpy.ops.armature.calculate_roll(type='GLOBAL_POS_Z')
+    misc_bone_creation_cleanup()
 
-            create_spine_fkik_chains()
-            create_arm_fkik_chains()
-            create_leg_fkik_chains()
-            create_finger_fkik_chains()
-            arms_ik_collection = collections.get('Arms CTRL')
-            legs_ik_collection = collections.get('Legs CTRL')
-            spine_ik_collection = collections.get('Spine CTRL')
-            create_ik_control_bones(collection=arms_ik_collection, chain=['Hand', 'Forearm', 'Shoulder',], side='.L', pole_name='Elbow')
-            create_ik_control_bones(collection=legs_ik_collection, chain=['Foot', 'Shin', 'Thigh',], side='.L', pole_name='Knee', y_axis_position=-0.625, z_position_by='head')
-            create_ik_control_bones(collection=spine_ik_collection, chain=['LowerAbdomen', 'Hip',], pole_name='Hip')
-            create_ik_control_bones(collection=spine_ik_collection, chain=['Chest', 'Abdomen', ], pole_name='Chest')
-            create_ik_control_bones(collection=spine_ik_collection, chain=['Head', 'Neck',], pole_name='Head', y_axis_position=0.5)
-            create_mch_shoulder_bones_and_controls()
-            create_spine_control_bones()
-            create_finger_control_bones()
-            create_foot_roll_control_bones()
-            create_eye_control_bones()
+    # change bone-roll to Global +Z to prevent issues later on
+    bpy.ops.armature.select_all(action='SELECT')
+    bpy.ops.armature.calculate_roll(type='GLOBAL_POS_Z')
 
-            misc_bone_creation_cleanup()
+    bpy.ops.object.editmode_toggle()  # we're done here
 
-            # change bone-roll to Global +Z to prevent issues later on
-            bpy.ops.armature.select_all(action='SELECT')
-            bpy.ops.armature.calculate_roll(type='GLOBAL_POS_Z')
+    bpy.ops.object.posemode_toggle() # pose mode now — setting up constraints.
+    # change all bones to XYZ euler
+    pose_bones = armature.pose.bones
+    for bone in pose_bones:
+        bone.rotation_mode = 'XYZ'
 
-            # separate_armatures(figure_name, obj)
-            # strip_trailing_digits_from_bones(obj)
+    assign_all_custom_shapes(armature)
 
-            bpy.ops.object.editmode_toggle()  # we're done here
+    # add constraints
+    create_finger_fk_ctrl_constraints()
+    add_copy_transforms_constraints('IK', 'FK', 'Copy Transforms (IK)')
+    add_copy_transforms_constraints('FK', 'DEF', 'Copy Transforms (FK)')
 
-            bpy.ops.object.posemode_toggle() # pose mode now — setting up constraints.
-            # change all bones to XYZ euler
-            pose_bones = armature.pose.bones
-            for bone in pose_bones:
-                bone.rotation_mode = 'XYZ'
+    add_ik_constraints('CTRL-IK-Hand' , ['Forearm', 'Shoulder'], '.L', 'Elbow', 180)
+    add_ik_constraints('IK-Foot' , ['Shin', 'Thigh'], '.L', 'Knee', 180)
+    add_ik_constraints('CTRL-IK-LowerAbdomen', ['LowerAbdomen', 'Hip'], '', 'Hip', 90)
+    add_ik_constraints('CTRL-IK-Chest', ['Chest', 'Abdomen'], '', 'Chest', -90)
+    add_ik_constraints('CTRL-IK-Head', ['Head', 'Neck'], '', 'Head', 90)
+    # fingers
+    add_ik_constraints('CTRL-IK-Thumb-Joint', ['Thumb_1'], '.L', None)
+    add_ik_constraints('CTRL-IK-Thumb', ['Thumb_3', 'Thumb_2'], '.L', None)
+    add_ik_constraints('CTRL-IK-Index', ['Index_3', 'Index_2', 'Index_1'], '.L', None)
+    add_ik_constraints('CTRL-IK-Mid', ['Mid_3', 'Mid_2', 'Mid_1'], '.L', None)
+    add_ik_constraints('CTRL-IK-Ring', ['Ring_3', 'Ring_2', 'Ring_1'], '.L', None)
+    add_ik_constraints('CTRL-IK-Pinky', ['Pinky_3', 'Pinky_2', 'Pinky_1'], '.L', None)
+    setup_collar_constraints()
+    setup_foot_roll_constraints()
+    setup_eye_tracking_constraints()
 
-            assign_all_custom_shapes(armature)
+    create_custom_properties()
 
-            # add constraints
-            create_finger_fk_ctrl_constraints()
-            add_copy_transforms_constraints('IK', 'FK', 'Copy Transforms (IK)')
-            add_copy_transforms_constraints('FK', 'DEF', 'Copy Transforms (FK)')
+    # Hide these two bones for now
+    bones = armature.data.bones
+    bones['FK-Buttock.L'].hide = True
+    bones['IK-Buttock.L'].hide = True
 
-            add_ik_constraints('CTRL-IK-Hand' , ['Forearm', 'Shoulder'], '.L', 'Elbow', 180)
-            add_ik_constraints('IK-Foot' , ['Shin', 'Thigh'], '.L', 'Knee', 180)
-            add_ik_constraints('CTRL-IK-LowerAbdomen', ['LowerAbdomen', 'Hip'], '', 'Hip', 90)
-            add_ik_constraints('CTRL-IK-Chest', ['Chest', 'Abdomen'], '', 'Chest', -90)
-            add_ik_constraints('CTRL-IK-Head', ['Head', 'Neck'], '', 'Head', 90)
-            # fingers
-            add_ik_constraints('CTRL-IK-Thumb-Joint', ['Thumb_1'], '.L', None)
-            add_ik_constraints('CTRL-IK-Thumb', ['Thumb_3', 'Thumb_2'], '.L', None)
-            add_ik_constraints('CTRL-IK-Index', ['Index_3', 'Index_2', 'Index_1'], '.L', None)
-            add_ik_constraints('CTRL-IK-Mid', ['Mid_3', 'Mid_2', 'Mid_1'], '.L', None)
-            add_ik_constraints('CTRL-IK-Ring', ['Ring_3', 'Ring_2', 'Ring_1'], '.L', None)
-            add_ik_constraints('CTRL-IK-Pinky', ['Pinky_3', 'Pinky_2', 'Pinky_1'], '.L', None)
-            setup_collar_constraints()
-            setup_foot_roll_constraints()
-            setup_eye_tracking_constraints()
-
-            create_custom_properties()
-
-            # Hide these two bones for now
-            bones = armature.data.bones
-            bones['FK-Buttock.L'].hide = True
-            bones['IK-Buttock.L'].hide = True
-
-            bpy.ops.object.editmode_toggle()
-            bpy.ops.armature.select_all(action='SELECT')
-            bpy.ops.armature.symmetrize(direction="POSITIVE_X")
-            bpy.ops.armature.select_all(action='DESELECT')
-            create_spine_fkik_switch_drivers(['FK-Hip', 'FK-LowerAbdomen', 'FK-Abdomen', 'FK-Chest', 'FK-Neck', 'FK-Head'], 'spine_fkik')
-            create_limb_fkik_switch_drivers(['FK-Hand', 'FK-Forearm', 'FK-Shoulder', 'FK-Collar'], 'arms_fkik')
-            create_limb_fkik_switch_drivers(['FK-Foot', 'FK-Shin', 'FK-Thigh', 'FK-Buttock'], 'legs_fkik')
-            create_finger_fkik_switch_drivers('fingers_fkik')
-            bpy.ops.object.posemode_toggle()
-            bpy.context.object.data.collections['Rigging'].is_visible = False
+    bpy.ops.object.editmode_toggle()
+    bpy.ops.armature.select_all(action='SELECT')
+    bpy.ops.armature.symmetrize(direction="POSITIVE_X")
+    bpy.ops.armature.select_all(action='DESELECT')
+    create_spine_fkik_switch_drivers(['FK-Hip', 'FK-LowerAbdomen', 'FK-Abdomen', 'FK-Chest', 'FK-Neck', 'FK-Head'], 'spine_fkik')
+    create_limb_fkik_switch_drivers(['FK-Hand', 'FK-Forearm', 'FK-Shoulder', 'FK-Collar'], 'arms_fkik')
+    create_limb_fkik_switch_drivers(['FK-Foot', 'FK-Shin', 'FK-Thigh', 'FK-Buttock'], 'legs_fkik')
+    create_finger_fkik_switch_drivers('fingers_fkik')
+    bpy.ops.object.posemode_toggle()
+    bpy.context.object.data.collections['Rigging'].is_visible = False
 
     # force-update drivers
-    # todo — remove the hard-coded reference to armature name
-    armature = bpy.data.objects.get('Armature')
     for fcurve in armature.animation_data.drivers:
         original_expression = fcurve.driver.expression
         fcurve.driver.expression += " "
@@ -151,34 +137,6 @@ def setup_poser_figure(objects):
 
     bpy.context.scene.transform_orientation_slots[0].type = 'GLOBAL'
     bpy.context.scene.tool_settings.transform_pivot_point = 'MEDIAN_POINT'
-
-
-def fix_mesh(obj):
-    # go into edit mode, select all loose geometry and delete it
-    bpy.ops.object.editmode_toggle()
-
-    # Poser's FBX export adds loose vertices at the borders between
-    # vertex groups. These will cause problems when it comes time to
-    # adjust weight-maps
-    bpy.ops.mesh.select_loose()
-    bpy.ops.mesh.delete(type='VERT')
-
-    # Also symmetrize geometry to prevent issues with mirroring vertex groups
-    # and manipulating geometry in sculpt-mode
-    bpy.ops.mesh.symmetry_snap()
-    bpy.ops.mesh.symmetry_snap(direction='POSITIVE_X')
-
-    # remove the root or Body vertex groups — sometimes, the bone rename happens before processing the mesh
-    vertex_group = obj.vertex_groups.get('Body') or obj.vertex_groups.get('root')
-    if vertex_group:
-        obj.vertex_groups.remove(vertex_group)
-
-    # create new weight-group for LowerAbdomen bone
-    obj.vertex_groups.new(name="DEF-LowerAbdomen")
-    obj.vertex_groups.active = obj.vertex_groups.get('DEF-LowerAbdomen')
-    obj.vertex_groups.active_index = 1
-
-    bpy.ops.object.editmode_toggle()
 
 
 def create_collections():
