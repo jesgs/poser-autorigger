@@ -1,11 +1,16 @@
 # Poser Autorigger for Blender
 
+**Under development—Use at your own risk**
+
 An autorigger for Poser characters imported as FBX files.
 
-This auto-rigging tool is geared specifically towards FBX imported figures that already have an existing base armature. This tool takes that existing armature and automates the setup of IK/FK chains, bone collections, and bone widgets.
-This tool adds a deformer bone to the spine chain called `LowerAbdomen` but it does not create a weight-group. This weight-group will need to be created manually and blended with the hip and abdomen weight-groups. 
+This auto-rigging tool is intended for figures that were exported from Poser as FBX files—which already have an existing base armature. This tool takes that existing armature and automates the setup of IK/FK chains, bone collections, and bone widgets.
 
-**Under development—Use at your own risk**
+This tool also adds a deformer bone to the spine chain called `LowerAbdomen` in order to complete the imported spine chain from Poser. However, it does not create a weight-group. This weight-group will need to be created manually and blended with the hip and abdomen weight-groups. This feature may be removed or moved behind an option flag.
+
+## Motivation
+
+The motivation for creating this tool was to automate a number of tasks I do to a figure that I've imported from Poser. It also standardizes my workflow so I'm not forgetting my naming conventions or collection sets between when working on different figures.
 
 ## **Workflow Summary**
 
@@ -16,15 +21,23 @@ This tool adds a deformer bone to the spine chain called `LowerAbdomen` but it d
 
 ## TODOs
 
-- [x] Determine if mesh correction code should be removed or expanded. This code is actually part of [Poser Tools](https://github.com/jesgs/poser-tools).
-  - Move to Poser Tools. We can bring it back later or merge the two add-ons.
-- [ ] Rig UI panel ideas: built-in but still provides support for [Bone Manager](https://fin.gumroad.com/l/STdb) and [Rig UI](https://superhivemarket.com/products/rig-ui)
+- [x] Move mesh correction code to [Poser Tools](https://github.com/jesgs/poser-tools)
+- [ ] Add option for Rig UI panel but still provide support for [Bone Manager](https://fin.gumroad.com/l/STdb) and [Rig UI](https://superhivemarket.com/products/rig-ui)
 - [ ] Test against other Poser figures (Daz3d Millennium 4 figures, La Femme and Le Homme, AnimeDoll, etc.)
+- [ ] Bring code in line with [Blender guidelines](https://developer.blender.org/docs/features/extensions/moderation/guidelines/)
+- [ ] Consider merging [Poser Tools](https://github.com/jesgs/poser-tools) with this add-on.
+- [ ] **FEATURE**: Add base face rig, which will need to be adjusted by the user to fit the character.
+  - [ ] Automate creation of inner mouth rig.
+    - [ ] Deformer, MCH and control bones for upper and lower teeth.
+    - [ ] Deformer MCH and control bones for jaw.
+  - [ ] Automate creation of tongue rig
+    - [ ] IK/FK switching
+    - [ ] Spline IK chain
 
 Below are some ideas that could be handled by user before the control rig is generated. Rig generation process would automatically detect these bones and add controls as needed. 
 The process to create the `LowerAbdomen` bone and reposition the `Body` bone and rename it `root` could also be optionally left to the user.
 - [ ] Add option to modify hip/buttock bones into a full pelvis setup. This process should run before bones are renamed, similar to how LowerAbdomen is created.
-  - `Left_Buttock` and `Right_Buttock` are renamed to `Left_Hip` and `Right_Hip`
+  - `Left_Buttock` and `Right_Buttock` are renamed to `Left_Hip` and `Right_Hip`. The tail of each bone should be aligned to their respective heads
   - Create `Left_Pelvis` and parent it to the main `Hip` bone. Position the head of each bone to align with the head of the `Hip` bone
     - Align x-axis of the tail of `Left_Pelvis` with the head of `Left_Hip` (`Left_Hip` head.x - ~0.0096)
     - Align y-axis of the tail of `Left_Pelvis` with the head of `Left_Hip` (`Left_Hip` head.y + ~-0.0474)
@@ -42,6 +55,7 @@ The process to create the `LowerAbdomen` bone and reposition the `Body` bone and
   - Detect existing limb bones (shoulder, upper arm, forearm, hand, thigh, shin, foot).
   - [x] Generate IK chains for arms and legs.
   - [x] Generate FK chains for arms and legs.
+  
 - **Fingers:**
   - [x] Detect finger bones.
   - [x] Create FK controls for each finger.
@@ -51,18 +65,20 @@ The process to create the `LowerAbdomen` bone and reposition the `Body` bone and
   - [x] Detect spine bones.
   - [x] Create FK controls along the spine.
   - [x] Create IK controls along the spine.
+  - [ ] Change deformer bones to full bendy-bones.
 
 ### 2. Foot Roll Control
 - **Foot Rig Features:**
-  - [x] Add foot roll controller (using a custom bone or empty).
+  - [x] Add foot roll controller.
   - [ ] Setup constraints for toe bend, heel lift, ball roll, etc.
   - [ ] Automatic foot banking (side-to-side roll).
 
 ### 3. Constraints Setup
 - **Rig Constraints:**
-  - [x] Add necessary constraints for all IK and FK chains (IK, Copy Rotation, Limit Rotation, etc.).
+  - [x] Add necessary constraints for all IK and FK chains.
   - [x] Ensure pole targets are generated and positioned correctly for knees/elbows.
   - [x] Setup drivers or custom properties for easy switching and control.
+  - [ ] Limit Rotation constraints for bones that need them
 
 ### 4. Control Custom-Shapes
 - **Custom Bone Shapes:**
@@ -72,6 +88,7 @@ The process to create the `LowerAbdomen` bone and reposition the `Body` bone and
 - **Rig UI Panel:**
   - [ ] Add a custom sidebar panel in Blender for rig controls (IK/FK switch, foot roll parameters, etc.).
   - [ ] Buttons for common actions (zero pose, snap FK to IK, etc.).
+  - [ ] Panel to control figure's "non-driven" shapekeys.
 
 ### 6. Error Checking and Reporting
 - **Validation:**
