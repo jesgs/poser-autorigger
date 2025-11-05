@@ -1,0 +1,25 @@
+name: Edit File
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  edit-file:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Remove line from file
+        run: |
+          sed -i '/line to remove/d' path/to/your/file.txt
+          
+      - name: Commit changes
+        run: |
+          git config --local user.email "you@example.com"
+          git config --local user.name "Your Name"
+          git add path/to/your/file.txt
+          git commit -m "Removed a line from the file"
+          git push
