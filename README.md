@@ -15,49 +15,51 @@ This auto-rigging tool is geared specifically towards FBX imported figures that 
 
 ## TODOs
 
-- Determine if mesh correction code should be removed or expanded. This code is actually part of [Poser Tools](https://github.com/jesgs/poser-tools).
-
+- [ ] Determine if mesh correction code should be removed or expanded. This code is actually part of [Poser Tools](https://github.com/jesgs/poser-tools).
+- [ ] Separate non-connected meshes into separate objects (eyebrows, eyelashes, eyes, gums/teeth, tongue, and pubic hair mesh). This could also be part of [Poser Tools](https://github.com/jesgs/poser-tools).
+- [ ] Rig UI panel ideas: built-in but still provides support for [Bone Manager](https://fin.gumroad.com/l/STdb) and [Rig UI](https://superhivemarket.com/products/rig-ui)
+- [ ] Test against other Poser figures (Daz3d Millennium 4 figures, La Femme and Le Homme, AnimeDoll)
 
 ## Base Feature Set for Poser FBX Auto-Rigger in Blender
 
 ### 1. IK/FK Chain Creation
 - **Limbs (Arms & Legs):**
   - Detect existing limb bones (shoulder, upper arm, forearm, hand, thigh, shin, foot).
-  - Generate IK chains for arms and legs.
-  - Generate FK chains for arms and legs.
+  - [x] Generate IK chains for arms and legs.
+  - [x] Generate FK chains for arms and legs.
 - **Fingers:**
-  - Detect finger bones.
-  - Create FK controls for each finger.
-  - Optionally, add simple IK for index fingers (for pointing, if needed).
+  - [x] Detect finger bones.
+  - [x] Create FK controls for each finger.
+  - [x] Add IK controls for each finger, including thumb.
+
 - **Spine:**
-  - Detect spine bones.
-  - Create FK controls along the spine.
-  - Optionally, create a simple IK spline for the spine for posing.
+  - [x] Detect spine bones.
+  - [x] Create FK controls along the spine.
+  - [x] Create IK controls along the spine.
 
 ### 2. Foot Roll Control
 - **Foot Rig Features:**
-  - Add foot roll controller (using a custom bone or empty).
-  - Setup constraints for toe bend, heel lift, ball roll, etc.
-  - Automatic foot banking (side-to-side roll).
-  - Lock/unlock foot/heel as needed.
+  - [x] Add foot roll controller (using a custom bone or empty).
+  - [ ] Setup constraints for toe bend, heel lift, ball roll, etc.
+  - [ ] Automatic foot banking (side-to-side roll).
 
 ### 3. Constraints Setup
 - **Rig Constraints:**
-  - Add necessary constraints for all IK and FK chains (IK, Copy Rotation, Limit Rotation, etc.).
-  - Ensure pole targets are generated and positioned correctly for knees/elbows.
-  - Setup drivers or custom properties for easy switching and control.
+  - [x] Add necessary constraints for all IK and FK chains (IK, Copy Rotation, Limit Rotation, etc.).
+  - [x] Ensure pole targets are generated and positioned correctly for knees/elbows.
+  - [x] Setup drivers or custom properties for easy switching and control.
 
 ### 4. Control Custom-Shapes
 - **Custom Bone Shapes:**
-  - Assign custom shapes to each main control (IK handles, FK controls, foot roll, pole targets).
-  - Use Blender’s built-in shapes or allow loading from a user-supplied blend file.
+  - [x] Assign custom shapes to each main control (IK handles, FK controls, foot roll, pole targets).
+  - [?] Use Blender’s built-in shapes or allow loading from a user-supplied blend file.
 
 ### 5. User Interface (Optional, but recommended for usability)
 - **Rig UI Panel:**
-  - Add a custom sidebar panel in Blender for rig controls (IK/FK switch, foot roll parameters, etc.).
-  - Buttons for common actions (zero pose, snap FK to IK, etc.).
+  - [ ] Add a custom sidebar panel in Blender for rig controls (IK/FK switch, foot roll parameters, etc.).
+  - [ ] Buttons for common actions (zero pose, snap FK to IK, etc.).
 
 ### 6. Error Checking and Reporting
 - **Validation:**
-  - Check for missing bones or naming conventions (warn if not standard).
-  - Warn if FBX armature isn’t compatible (missing limbs, etc.).
+  - [ ] Check for missing bones or naming conventions (warn if not standard).
+  - [ ] Warn if FBX armature isn’t compatible (missing limbs, etc.).
