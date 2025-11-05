@@ -125,6 +125,11 @@ def setup_poser_figure(objects):
 
             create_custom_properties()
 
+            # Hide these two bones for now
+            bones = armature.data.bones
+            bones['FK-Buttock.L'].hide = True
+            bones['IK-Buttock.L'].hide = True
+
             bpy.ops.object.editmode_toggle()
             bpy.ops.armature.select_all(action='SELECT')
             bpy.ops.armature.symmetrize(direction="POSITIVE_X")
