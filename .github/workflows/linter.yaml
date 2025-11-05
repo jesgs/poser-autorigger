@@ -1,7 +1,13 @@
 name: Ruff Linter
 
-on: [push, pull_request]
-
+on:
+  push:
+    paths:
+      - '**/*.py'
+  pull_request:
+    paths:
+      - '**/*.py'
+      
 jobs:
   lint:
     runs-on: ubuntu-latest
