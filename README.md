@@ -17,9 +17,8 @@ This auto-rigging tool is geared specifically towards FBX imported figures that 
 
 - [x] Determine if mesh correction code should be removed or expanded. This code is actually part of [Poser Tools](https://github.com/jesgs/poser-tools).
   - Move to Poser Tools. We can bring it back later or merge the two add-ons.
-- [ ] Separate non-connected meshes into separate objects (eyebrows, eyelashes, eyes, gums/teeth, tongue, and pubic hair mesh). This could also be part of [Poser Tools](https://github.com/jesgs/poser-tools).
 - [ ] Rig UI panel ideas: built-in but still provides support for [Bone Manager](https://fin.gumroad.com/l/STdb) and [Rig UI](https://superhivemarket.com/products/rig-ui)
-- [ ] Test against other Poser figures (Daz3d Millennium 4 figures, La Femme and Le Homme, AnimeDoll)
+- [ ] Test against other Poser figures (Daz3d Millennium 4 figures, La Femme and Le Homme, AnimeDoll, etc.)
 
 ## Base Feature Set for Poser FBX Auto-Rigger in Blender
 
@@ -53,7 +52,6 @@ This auto-rigging tool is geared specifically towards FBX imported figures that 
 ### 4. Control Custom-Shapes
 - **Custom Bone Shapes:**
   - [x] Assign custom shapes to each main control (IK handles, FK controls, foot roll, pole targets).
-  - [?] Use Blender’s built-in shapes or allow loading from a user-supplied blend file.
 
 ### 5. User Interface (Optional, but recommended for usability)
 - **Rig UI Panel:**
