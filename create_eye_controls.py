@@ -29,6 +29,8 @@ def setup_eye_tracking_constraints():
 
 def create_eye_control_bones():
     collection = bpy.context.object.data.collections_all.get('Eyes CTRL')
+    mch_parent_collection = bpy.context.object.data.collections_all.get('MCH')
+    mch_eye_collection = bpy.context.object.data.collections.new('MCH Eye', parent=mch_parent_collection)
     edit_bones = bpy.context.object.data.edit_bones
     # create main eye track and two eye track bones
     bone_eye_left = edit_bones['DEF-Eye.L']
@@ -41,7 +43,7 @@ def create_eye_control_bones():
         use_deform=False,
         parent=bone_eye_left.parent,
         bbone_size=bone_eye_left.bbone_z * 2,
-        collection=collection
+        collection=mch_eye_collection
     )
 
     bone_ctrl_eye_target = create_bone(
