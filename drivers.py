@@ -110,10 +110,11 @@ def create_finger_fkik_switch_drivers(prop_name:str):
 
 
             is_left = '.L' in bone.name
+
             if is_left:
-                prop_name = prop_name + '_l'
+                prop_name_loop = prop_name + '_l'
             else:
-                prop_name = prop_name + '_r'
+                prop_name_loop = prop_name + '_r'
 
             for i,finger in enumerate(chain_name):
                 if finger not in bone.name:
@@ -132,7 +133,7 @@ def create_finger_fkik_switch_drivers(prop_name:str):
                         target = var.targets[0]
                         target.id_type = 'OBJECT'
                         target.id = armature
-                        target.data_path = 'pose.bones["PROPERTIES"]["' + prop_name + '"][' + str(i) + ']'  # Custom property path
+                        target.data_path = 'pose.bones["PROPERTIES"]["' + prop_name_loop + '"][' + str(i) + ']'  # Custom property path
                         # Set driver expression
                         driver.expression = 'fkik_switch'
                         driver.use_self=False
