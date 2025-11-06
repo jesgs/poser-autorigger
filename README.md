@@ -22,18 +22,22 @@ The motivation for creating this tool was to automate a number of tasks I do to 
 ## TODOs
 
 - [x] Move mesh correction code to [Poser Tools](https://github.com/jesgs/poser-tools)
-- [ ] Add option for Rig UI panel but still provide support for [Bone Manager](https://fin.gumroad.com/l/STdb) and [Rig UI](https://superhivemarket.com/products/rig-ui)
+- [ ] **FEATURE**: Add option for Rig UI panel but still provide support for [Bone Manager](https://fin.gumroad.com/l/STdb) and [Rig UI](https://superhivemarket.com/products/rig-ui)
 - [ ] Test against other Poser figures (Daz3d Millennium 4 figures, La Femme and Le Homme, AnimeDoll, etc.)
 - [ ] Bring code in line with [Blender guidelines](https://developer.blender.org/docs/features/extensions/moderation/guidelines/)
 - [ ] Consider merging [Poser Tools](https://github.com/jesgs/poser-tools) with this add-on.
+- [ ] **FEATURE**: Remove process for creating root bone from the useless Body bone.
+- [ ] **FEATURE**: Move process for creating lower abdomen bone to an option
+- [ ] **FEATURE**: Add option for creating pelvis bones
 - [ ] **FEATURE**: Add base face rig, which will need to be adjusted by the user to fit the character.
   - [ ] Automate creation of inner mouth rig.
-    - [ ] Deformer, MCH and control bones for upper and lower teeth.
-    - [ ] Deformer MCH and control bones for jaw.
+    - [ ] Generate deformer, MCH and control bones for upper and lower teeth.
+    - [ ] Generate deformer, MCH and control bones for jaw.
   - [ ] Automate creation of tongue rig
     - [ ] IK/FK switching
     - [ ] Spline IK chain
 
+## Ideas
 Below are some ideas that could be handled by user before the control rig is generated. Rig generation process would automatically detect these bones and add controls as needed. 
 The process to create the `LowerAbdomen` bone and reposition the `Body` bone and rename it `root` could also be optionally left to the user.
 - [ ] Add option to modify hip/buttock bones into a full pelvis setup. This process should run before bones are renamed, similar to how LowerAbdomen is created.
@@ -52,7 +56,7 @@ The process to create the `LowerAbdomen` bone and reposition the `Body` bone and
 
 ### 1. IK/FK Chain Creation
 - **Limbs (Arms & Legs):**
-  - Detect existing limb bones (shoulder, upper arm, forearm, hand, thigh, shin, foot).
+  - [x] Detect existing limb bones (shoulder, upper arm, forearm, hand, thigh, shin, foot).
   - [x] Generate IK chains for arms and legs.
   - [x] Generate FK chains for arms and legs.
   
