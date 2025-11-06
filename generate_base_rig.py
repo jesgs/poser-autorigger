@@ -379,7 +379,6 @@ def fix_bones():
     edit_bones['Right_Toe'].tail.y = toe_y - -0.1
 
 
-
 def create_pelvis_bones():
     # create pelvis and buttock bones but first rename the current buttock bones
     # edit_bones['Left_Buttock'].name = 'Left_Hip'
