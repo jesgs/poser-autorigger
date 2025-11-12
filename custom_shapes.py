@@ -1,6 +1,7 @@
 from bpy.types import PoseBone, Object
 from pathlib import Path
 import bpy
+import re
 
 def assign_all_custom_shapes(armature):
     pose_bones = armature.pose.bones
@@ -23,7 +24,7 @@ def assign_all_custom_shapes(armature):
         if 'DEF' in bone.name or 'MCH' in bone.name:
             continue
 
-        shape_name = 'WGT-' + bone.name
+        shape_name = 'WGT-' + armature.name + '-' + bone.name
         found = shape_collection.all_objects.find(shape_name)
 
         if found != -1:
@@ -49,4 +50,9 @@ def import_custom_shapes(collection_name:str):
     coll.name = "WGTS-" + collection_name # rename collection to match armature
     if coll and coll.name not in bpy.context.scene.collection.children:
         bpy.context.scene.collection.children.link(coll)
+
+    for shape in coll.all_objects:
+        new_shape_name = 'WGT-' + collection_name + '-'
+        shape.name = shape.name.replace('WGT-', new_shape_name)
+
     coll.hide_viewport = True

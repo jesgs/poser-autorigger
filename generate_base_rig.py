@@ -96,7 +96,7 @@ def setup_poser_figure(armature: Object):
     add_copy_transforms_constraints('FK', 'DEF', 'Copy Transforms (FK)')
 
     add_ik_constraints('CTRL-IK-Hand' , ['Forearm', 'Shoulder'], '.L', 'Elbow', 180)
-    add_ik_constraints('IK-Foot' , ['Shin', 'Thigh'], '.L', 'Knee', 180)
+    add_ik_constraints('IK-Foot' , ['Shin', 'Thigh'], '.L', 'Knee', 90)
     add_ik_constraints('CTRL-IK-LowerAbdomen', ['LowerAbdomen', 'Hip'], '', 'Hip', 90)
     add_ik_constraints('CTRL-IK-Chest', ['Chest', 'Abdomen'], '', 'Chest', -90)
     add_ik_constraints('CTRL-IK-Head', ['Head', 'Neck'], '', 'Head', 90)
