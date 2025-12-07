@@ -122,13 +122,6 @@ def setup_poser_figure(armature: Object):
     create_limb_fkik_switch_drivers(['FK-Foot', 'FK-Shin', 'FK-Thigh', 'FK-Buttock'], 'legs_fkik')
     create_finger_fkik_switch_drivers('fingers_fkik')
 
-    # Hide these two bones for now
-    bones = armature.data.bones
-    bones['FK-Buttock.L'].hide = True
-    bones['IK-Buttock.L'].hide = True
-    bones['FK-Buttock.R'].hide = True
-    bones['IK-Buttock.R'].hide = True
-
     bpy.ops.object.posemode_toggle()
     bpy.context.object.data.collections['Rigging'].is_visible = False
 
@@ -140,6 +133,12 @@ def setup_poser_figure(armature: Object):
 
     bpy.context.scene.transform_orientation_slots[0].type = 'GLOBAL'
     bpy.context.scene.tool_settings.transform_pivot_point = 'MEDIAN_POINT'
+    # Hide these two bones for now
+    bones = armature.data.bones
+    bones['FK-Buttock.L'].hide = True
+    bones['IK-Buttock.L'].hide = True
+    bones['FK-Buttock.R'].hide = True
+    bones['IK-Buttock.R'].hide = True
 
 
 def create_collections():
@@ -400,6 +399,10 @@ def create_pelvis_bones():
 
 def create_lower_abdomen_bone():
     edit_bones = bpy.context.object.data.edit_bones
+
+    # check for existence of LowerAbdomen bone first
+    if edit_bones.find('LowerAbdomen') != -1:
+        return
 
     # create new LowerAbdomen bone, move to between hip and abdomen, make hip its parent,
     # then parent abdomen to new bone

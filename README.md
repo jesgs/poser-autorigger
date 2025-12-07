@@ -26,6 +26,8 @@ The motivation for creating this tool was to automate a number of tasks I do to 
 - [ ] Test against other Poser figures (Daz3d Millennium 4 figures, La Femme and Le Homme, AnimeDoll, etc.)
 - [ ] Bring code in line with [Blender guidelines](https://developer.blender.org/docs/features/extensions/moderation/guidelines/)
 - [ ] Consider merging [Poser Tools](https://github.com/jesgs/poser-tools) with this add-on.
+- [ ] **FEATURE**: Add support for other Poser figures. At the moment, this add-on only supports the base Daz3D Millennium 3 figures.
+  - Hard-coded references to bones will need to be removed and replaced by a configuration system of some sort.
 - [ ] **FEATURE**: Remove process for creating root bone from the useless Body bone.
 - [ ] **FEATURE**: Move process for creating lower abdomen bone to an option
 - [ ] **FEATURE**: Add option for creating pelvis bones
