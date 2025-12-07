@@ -113,11 +113,6 @@ def setup_poser_figure(armature: Object):
 
     create_custom_properties()
 
-    # Hide these two bones for now
-    bones = armature.data.bones
-    bones['FK-Buttock.L'].hide = True
-    bones['IK-Buttock.L'].hide = True
-
     bpy.ops.object.editmode_toggle()
     bpy.ops.armature.select_all(action='SELECT')
     bpy.ops.armature.symmetrize(direction="POSITIVE_X")
@@ -126,6 +121,14 @@ def setup_poser_figure(armature: Object):
     create_limb_fkik_switch_drivers(['FK-Hand', 'FK-Forearm', 'FK-Shoulder', 'FK-Collar'], 'arms_fkik')
     create_limb_fkik_switch_drivers(['FK-Foot', 'FK-Shin', 'FK-Thigh', 'FK-Buttock'], 'legs_fkik')
     create_finger_fkik_switch_drivers('fingers_fkik')
+
+    # Hide these two bones for now
+    bones = armature.data.bones
+    bones['FK-Buttock.L'].hide = True
+    bones['IK-Buttock.L'].hide = True
+    bones['FK-Buttock.R'].hide = True
+    bones['IK-Buttock.R'].hide = True
+
     bpy.ops.object.posemode_toggle()
     bpy.context.object.data.collections['Rigging'].is_visible = False
 
