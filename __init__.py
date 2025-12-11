@@ -4,13 +4,13 @@ _needs_reload = "bpy" in locals()
 
 import bpy
 from .panels import RigPoserArmature_PT_Panel
-from .operators import OT_GenerateBaseRig_Operator
+from .operators import OT_GenerateBaseRig_Operator, OT_GenerateFaceRig_Operator
 
 # START — workflow remove
 if _needs_reload:
     import sys, importlib
     from .panels import RigPoserArmature_PT_Panel
-    from .operators import OT_GenerateBaseRig_Operator
+    from .operators import OT_GenerateBaseRig_Operator, OT_GenerateFaceRig_Operator
 
     all_modules = sys.modules
     all_modules = dict(sorted(all_modules.items(), key=lambda x: x[0]))  # sort them
@@ -31,7 +31,7 @@ bl_info = {
 }
 
 
-classes = [RigPoserArmature_PT_Panel, OT_GenerateBaseRig_Operator]
+classes = [RigPoserArmature_PT_Panel, OT_GenerateBaseRig_Operator, OT_GenerateFaceRig_Operator]
 
 def register():
     for cls in classes:

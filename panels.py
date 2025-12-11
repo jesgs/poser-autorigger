@@ -9,7 +9,11 @@ class RigPoserArmature_PT_Panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        op_row = layout.row(align=True)
-        op_row.scale_y = 1.5
 
-        op_row.operator("poser.generate_base_rig", icon="POSE_HLT")
+        base_rig_row = layout.row(align=True)
+        base_rig_row.scale_y = 1.5
+        base_rig_row.operator("poser.generate_base_rig", icon="POSE_HLT")
+
+        face_rig_row = layout.row(align=True)
+        face_rig_row.scale_y = 1.5
+        face_rig_row.operator("poser.generate_face_rig", icon="POSE_HLT")
