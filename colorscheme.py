@@ -1,5 +1,9 @@
-import colorsys
+"""Color scheme definitions for rig bones."""
 
+import colorsys
+from bpy.types import EditBone
+
+# Predefined color schemes for different bone types
 bright_red = {
     'normal': colorsys.hsv_to_rgb(0.0, 1, 1),
     'select': colorsys.hsv_to_rgb(0.0, 1, 1),
@@ -31,7 +35,14 @@ bright_blue = {
 }
 
 
-def assign_custom_color(bone, color: dict[str, tuple[float, float, float]]):
+def assign_custom_color(bone: EditBone, color: dict[str, tuple[float, float, float]]) -> None:
+    """
+    Apply custom color to a bone.
+    
+    Args:
+        bone: EditBone to color
+        color: Dictionary with 'normal', 'select', and 'active' RGB tuples
+    """
     bone.color.palette = 'CUSTOM'
     bone.color.custom.normal = color['normal']
     bone.color.custom.select = color['select']

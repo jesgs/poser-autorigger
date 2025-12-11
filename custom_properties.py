@@ -1,55 +1,55 @@
+"""Custom properties setup for rig controls."""
+
 import bpy
-def create_custom_properties():
+from .constants import (
+    PROP_HEAD_TRACKING, PROP_COLLAR_TRACKING, PROP_ARMS_FKIK, PROP_LEGS_FKIK,
+    PROP_SPINE_FKIK, PROP_FINGERS_FKIK_LEFT, PROP_FINGERS_FKIK_RIGHT,
+    FKIK_DEFAULT, FKIK_MIN, FKIK_MAX
+)
+
+
+def create_custom_properties() -> None:
+    """
+    Create custom properties on the PROPERTIES bone for rig controls.
+    
+    Sets up FK/IK switching properties and other control parameters.
+    Properties are library-overridable for linking across files.
+    """
     properties_bone = bpy.context.object.pose.bones['PROPERTIES']
 
-    properties_bone['head_tracking'] = False
-    properties_bone['collar_tracking_speed_multiplier'] = 0.05
+    # Tracking properties
+    properties_bone[PROP_HEAD_TRACKING] = False
+    properties_bone[PROP_COLLAR_TRACKING] = 0.05
 
-    # ik/fk switching
-    properties_bone['arms_fkik'] = [1.0, 1.0]
-    properties_bone['legs_fkik'] = [1.0, 1.0]
-    properties_bone['spine_fkik'] = 1.0
-    properties_bone['fingers_fkik_l'] = [1.0, 1.0, 1.0, 1.0, 1.0]
-    properties_bone['fingers_fkik_r'] = [1.0, 1.0, 1.0, 1.0, 1.0]
+    # FK/IK switching properties (1.0 = FK, 0.0 = IK)
+    properties_bone[PROP_ARMS_FKIK] = [FKIK_DEFAULT, FKIK_DEFAULT]
+    properties_bone[PROP_LEGS_FKIK] = [FKIK_DEFAULT, FKIK_DEFAULT]
+    properties_bone[PROP_SPINE_FKIK] = FKIK_DEFAULT
+    properties_bone[PROP_FINGERS_FKIK_LEFT] = [FKIK_DEFAULT] * 5
+    properties_bone[PROP_FINGERS_FKIK_RIGHT] = [FKIK_DEFAULT] * 5
+
+    # Configure property UI settings
+    _setup_property_ui(properties_bone, PROP_HEAD_TRACKING)
+    _setup_property_ui(properties_bone, PROP_COLLAR_TRACKING, min_val=FKIK_MIN, max_val=FKIK_MAX)
+    _setup_property_ui(properties_bone, PROP_ARMS_FKIK, min_val=FKIK_MIN, max_val=FKIK_MAX)
+    _setup_property_ui(properties_bone, PROP_LEGS_FKIK, min_val=FKIK_MIN, max_val=FKIK_MAX)
+    _setup_property_ui(properties_bone, PROP_SPINE_FKIK, min_val=FKIK_MIN, max_val=FKIK_MAX)
+    _setup_property_ui(properties_bone, PROP_FINGERS_FKIK_LEFT, min_val=FKIK_MIN, max_val=FKIK_MAX)
+    _setup_property_ui(properties_bone, PROP_FINGERS_FKIK_RIGHT, min_val=FKIK_MIN, max_val=FKIK_MAX)
 
 
-    properties_bone.property_overridable_library_set(f'["head_tracking"]', True)
-    properties_bone.id_properties_ui('head_tracking')
-
-    properties_bone.property_overridable_library_set(f'["collar_tracking_speed_multiplier"]', True)
-    collar_tracking_speed_multiplier_ui = properties_bone.id_properties_ui('collar_tracking_speed_multiplier')
-    collar_tracking_speed_multiplier_ui.update(
-        min=0.0,
-        max=1.0,
-    )
-
-    properties_bone.property_overridable_library_set(f'["arms_fkik"]', True)
-    arms_fkik_ui = properties_bone.id_properties_ui('arms_fkik')
-    arms_fkik_ui.update(
-        min=0.0,
-        max=1.0,
-    )
-    properties_bone.property_overridable_library_set(f'["legs_fkik"]', True)
-    legs_fkik_ui = properties_bone.id_properties_ui('legs_fkik')
-    legs_fkik_ui.update(
-        min=0.0,
-        max=1.0,
-    )
-    properties_bone.property_overridable_library_set(f'["spine_fkik"]', True)
-    spine_fkik_ui = properties_bone.id_properties_ui('spine_fkik')
-    spine_fkik_ui.update(
-        min=0.0,
-        max=1.0,
-    )
-    properties_bone.property_overridable_library_set(f'["fingers_fkik_l"]', True)
-    fingers_fkik_l_ui = properties_bone.id_properties_ui('fingers_fkik_l')
-    fingers_fkik_l_ui.update(
-        min=0.0,
-        max=1.0,
-    )
-    properties_bone.property_overridable_library_set(f'["fingers_fkik_r"]', True)
-    fingers_fkik_r_ui = properties_bone.id_properties_ui('fingers_fkik_r')
-    fingers_fkik_r_ui.update(
-        min=0.0,
-        max=1.0,
-    )
+def _setup_property_ui(properties_bone, prop_name: str, min_val: float = None, max_val: float = None) -> None:
+    """
+    Configure UI settings for a custom property.
+    
+    Args:
+        properties_bone: Bone containing the property
+        prop_name: Name of the property
+        min_val: Minimum value (optional)
+        max_val: Maximum value (optional)
+    """
+    properties_bone.property_overridable_library_set(f'["{prop_name}"]', True)
+    ui = properties_bone.id_properties_ui(prop_name)
+    
+    if min_val is not None and max_val is not None:
+        ui.update(min=min_val, max=max_val)
