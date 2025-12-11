@@ -1,3 +1,5 @@
+"""Main rig generation module for converting Poser FBX armatures to animation-ready rigs."""
+
 from typing import Literal, LiteralString
 from bpy.types import BoneCollection, Object
 from .colorscheme import bright_green, bright_blue
@@ -11,18 +13,42 @@ from .constraints import add_copy_transforms_constraints, add_ik_constraints
 from .drivers import create_limb_fkik_switch_drivers, create_spine_fkik_switch_drivers, create_finger_fkik_switch_drivers
 from .helpers import rename_all_bones, create_bone, create_fkik_chains, assign_custom_color
 from .custom_shapes import import_custom_shapes, assign_all_custom_shapes
+from .constants import (
+    ORIENTATION_NORMAL, ORIENTATION_GLOBAL, PIVOT_INDIVIDUAL, PIVOT_MEDIAN,
+    PREFIX_DEF, ROTATION_MODE_XYZ
+)
 import bpy
 
 
-
-def setup_poser_figure(armature: Object):
+def setup_poser_figure(armature: Object) -> None:
+    """
+    Main function to convert a Poser FBX armature into an animation-ready rig.
+    
+    This function performs the complete rigging process:
+    1. Applies transforms and sets up viewport
+    2. Creates bone collections
+    3. Fixes bone positions and creates control structures
+    4. Generates FK/IK chains for all limbs
+    5. Sets up constraints and drivers
+    6. Assigns custom shapes
+    
+    Args:
+        armature: The imported Poser armature object to rig
+        
+    Raises:
+        ValueError: If required bones are missing from the armature
+        RuntimeError: If rig generation fails at any stage
+    """
+    # Validate armature has required bones
+    _validate_armature(armature)
+    
     # Before deselecting everything, apply scale/rotation
     # Poser's scale is 1/100 smaller than Blender, plus rotation is different as well
     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 
     bpy.ops.object.select_all(action='DESELECT')
-    bpy.context.scene.transform_orientation_slots[0].type = 'NORMAL'
-    bpy.context.scene.tool_settings.transform_pivot_point = 'INDIVIDUAL_ORIGINS'
+    bpy.context.scene.transform_orientation_slots[0].type = ORIENTATION_NORMAL
+    bpy.context.scene.tool_settings.transform_pivot_point = PIVOT_INDIVIDUAL
 
     bpy.context.view_layer.objects.active = bpy.context.view_layer.objects[armature.name]
     bpy.context.active_object.select_set(state=True)
@@ -44,8 +70,8 @@ def setup_poser_figure(armature: Object):
     create_root()
     create_properties_bone()
     create_lower_abdomen_bone()
-    #create_pelvis_bones()
-    rename_all_bones('DEF-')
+    # create_pelvis_bones()  # Future feature: optional pelvis bone creation
+    rename_all_bones(PREFIX_DEF)
 
     # put all DEF bones in their respective collection
     def_collection = collections.get('DEF')
@@ -82,11 +108,11 @@ def setup_poser_figure(armature: Object):
 
     bpy.ops.object.editmode_toggle()  # we're done here
 
-    bpy.ops.object.posemode_toggle() # pose mode now — setting up constraints.
-    # change all bones to XYZ euler
+    bpy.ops.object.posemode_toggle()  # Pose mode now — setting up constraints
+    # Change all bones to XYZ euler rotation mode
     pose_bones = armature.pose.bones
     for bone in pose_bones:
-        bone.rotation_mode = 'XYZ'
+        bone.rotation_mode = ROTATION_MODE_XYZ
 
     assign_all_custom_shapes(armature)
 
@@ -131,17 +157,48 @@ def setup_poser_figure(armature: Object):
         fcurve.driver.expression += " "
         fcurve.driver.expression = original_expression
 
-    bpy.context.scene.transform_orientation_slots[0].type = 'GLOBAL'
-    bpy.context.scene.tool_settings.transform_pivot_point = 'MEDIAN_POINT'
-    # Hide these two bones for now
+    bpy.context.scene.transform_orientation_slots[0].type = ORIENTATION_GLOBAL
+    bpy.context.scene.tool_settings.transform_pivot_point = PIVOT_MEDIAN
+    
+    # Hide buttock bones (not typically used for animation)
     bones = armature.data.bones
-    bones['FK-Buttock.L'].hide = True
-    bones['IK-Buttock.L'].hide = True
-    bones['FK-Buttock.R'].hide = True
-    bones['IK-Buttock.R'].hide = True
+    for side in ['.L', '.R']:
+        bones[f'FK-Buttock{side}'].hide = True
+        bones[f'IK-Buttock{side}'].hide = True
 
 
-def create_collections():
+def _validate_armature(armature: Object) -> None:
+    """
+    Validate that the armature has the required bones for rigging.
+    
+    Args:
+        armature: Armature object to validate
+        
+    Raises:
+        ValueError: If required bones are missing
+    """
+    required_bones = ['Body', 'Hip', 'Chest', 'Head', 'Neck']
+    edit_bones = armature.data.bones
+    
+    missing_bones = [bone for bone in required_bones if bone not in edit_bones]
+    
+    if missing_bones:
+        raise ValueError(
+            f"Armature is missing required bones: {', '.join(missing_bones)}. "
+            "Make sure this is a valid Poser FBX import."
+        )
+
+
+def create_collections() -> None:
+    """
+    Create bone collections to organize the rig hierarchy.
+    
+    Creates hierarchical collections for:
+    - Root (main rig controls)
+    - Face (facial controls)
+    - Body (limbs and spine)
+    - Rigging (deform and mechanism bones)
+    """
     collections = bpy.context.object.data.collections
     collections.new('Root')
     face_collection = collections.new('Face')
@@ -174,9 +231,16 @@ def create_collections():
     collections.new('MCH', parent=rigging_collection)
 
 
-def misc_bone_creation_cleanup():
+def misc_bone_creation_cleanup() -> None:
+    """
+    Finalize bone positions, parenting, and colors after initial creation.
+    
+    Adjusts spine IK controls to proper positions and parents, and applies
+    consistent color schemes to control bones.
+    """
     edit_bones = bpy.context.object.data.edit_bones
-    # reposition spine IK controls and parent to spine controls
+    
+    # Reposition and parent spine IK controls
     bone_ctrl_ik_lowerabdomen = edit_bones['CTRL-IK-LowerAbdomen']
     bone_ctrl_ik_lowerabdomen.head = edit_bones['DEF-LowerAbdomen'].tail
     bone_ctrl_ik_lowerabdomen.parent = edit_bones['CTRL-Hip']
@@ -193,18 +257,27 @@ def misc_bone_creation_cleanup():
     bone_ctrl_ik_head.color.palette = 'CUSTOM'
     assign_custom_color(bone_ctrl_ik_head, bright_green)
 
-    # spine pole bone colors
-    assign_custom_color(edit_bones['CTRL-IK-Pole-Hip'], bright_blue)
-    assign_custom_color(edit_bones['CTRL-IK-Pole-Chest'], bright_blue)
-    assign_custom_color(edit_bones['CTRL-IK-Pole-Head'], bright_blue)
+    # Apply consistent blue color to spine pole targets
+    for pole_name in ['Hip', 'Chest', 'Head']:
+        assign_custom_color(edit_bones[f'CTRL-IK-Pole-{pole_name}'], bright_blue)
 
 
-def create_spine_control_bones():
+def create_spine_control_bones() -> None:
+    """
+    Create main control bones for spine manipulation.
+    
+    Creates:
+    - CTRL-Torso: Main body control
+    - CTRL-Hip: Hip control (child of torso)
+    - CTRL-Chest: Chest control (child of torso)
+    
+    These provide independent control over major body sections.
+    """
     edit_bones = bpy.context.object.data.edit_bones
     spine_ctrl_collection = bpy.context.object.data.collections_all.get('Spine CTRL')
     root_bone = edit_bones['root']
 
-    # create spine control bones
+    # Create main torso control
     bone_ctrl_torso = create_bone(
         edit_bones=edit_bones,
         name='CTRL-Torso',
@@ -217,6 +290,7 @@ def create_spine_control_bones():
         parent=root_bone
     )
 
+    # Create hip control (child of torso)
     create_bone(
         edit_bones=edit_bones,
         name='CTRL-Hip',
@@ -228,6 +302,7 @@ def create_spine_control_bones():
         collection=spine_ctrl_collection
     )
 
+    # Create chest control (child of torso)
     create_bone(
         edit_bones=edit_bones,
         name='CTRL-Chest',
@@ -285,11 +360,17 @@ def create_ik_control_bones(chain: list[LiteralString], collection:BoneCollectio
             collection.assign(ik_pole_bone)
 
 
-def create_leg_fkik_chains():
+def create_leg_fkik_chains() -> None:
+    """
+    Create FK and IK bone chains for legs.
+    
+    Generates parallel FK and IK chains for the leg bones, allowing
+    seamless switching between FK and IK animation modes.
+    """
     legs_ik_collection = bpy.context.object.data.collections_all.get('Legs IK')
     legs_fk_collection = bpy.context.object.data.collections_all.get('Legs FK')
 
-    # leg chains
+    # Leg bone chain from hip to toe
     leg_fkik_bone_chain = [
         'Buttock',
         'Thigh',
@@ -308,11 +389,17 @@ def create_leg_fkik_chains():
         legs_fk_collection.assign(fk_bone)
 
 
-def create_arm_fkik_chains():
+def create_arm_fkik_chains() -> None:
+    """
+    Create FK and IK bone chains for arms.
+    
+    Generates parallel FK and IK chains for the arm bones, allowing
+    seamless switching between FK and IK animation modes.
+    """
     arms_ik_collection = bpy.context.object.data.collections_all.get('Arms IK')
     arms_fk_collection = bpy.context.object.data.collections_all.get('Arms FK')
 
-    # arm chains
+    # Arm bone chain from collar to hand
     arm_fkik_bone_chain = [
         'Collar',
         'Shoulder',
@@ -329,11 +416,18 @@ def create_arm_fkik_chains():
         arms_fk_collection.assign(fk_bone)
 
 
-def create_spine_fkik_chains():
+def create_spine_fkik_chains() -> None:
+    """
+    Create FK and IK bone chains for spine.
+    
+    Generates parallel FK and IK chains for the spine bones, allowing
+    seamless switching between FK and IK animation modes. Spine chains
+    run from hip to head.
+    """
     spine_ik_collection = bpy.context.object.data.collections_all.get('Spine IK')
     spine_fk_collection = bpy.context.object.data.collections_all.get('Spine FK')
 
-    # handle all fk/ik chains
+    # Complete spine chain from hip to head
     spine_fkik_bone_chain = [
         'Hip',
         'LowerAbdomen',
@@ -352,13 +446,21 @@ def create_spine_fkik_chains():
         spine_fk_collection.assign(fk_bone)
 
 
-def fix_bones():
+def fix_bones() -> None:
+    """
+    Fix bone positions imported from Poser FBX.
+    
+    Corrects common issues:
+    - Centers head and neck bones on X-axis
+    - Aligns chest/neck junction
+    - Extends eye and toe bones for better control
+    """
     edit_bones = bpy.context.object.data.edit_bones
-    # head and neck bone are off-center, let's fix
-    edit_bones['Head'].head.x = 0  # this should also move the tail of the neck bone since they're connected
+    
+    # Center head bone on X-axis (also moves connected neck tail)
+    edit_bones['Head'].head.x = 0
 
-    # let's also align tail of chest bone with head of neck bone
-    # move the z and y axi, but we need to find the center
+    # Align chest tail and neck head to their midpoint
     chest_tail_y = edit_bones['Chest'].tail.y
     chest_tail_z = edit_bones['Chest'].tail.z
     neck_head_y = edit_bones['Neck'].head.y
@@ -371,14 +473,16 @@ def fix_bones():
     edit_bones['Chest'].tail.y = center_y
     edit_bones['Chest'].tail.z = center_z
 
-    # fix eyes and toe bones as well
+    # Extend eye bones forward for better control
+    EYE_EXTENSION = 0.1
     eye_y = edit_bones['Left_Eye'].tail.y
-    edit_bones['Left_Eye'].tail.y = eye_y - -0.1
-    edit_bones['Right_Eye'].tail.y = eye_y - -0.1
+    edit_bones['Left_Eye'].tail.y = eye_y + EYE_EXTENSION
+    edit_bones['Right_Eye'].tail.y = eye_y + EYE_EXTENSION
 
+    # Extend toe bones forward for better foot roll control
     toe_y = edit_bones['Left_Toe'].tail.y
-    edit_bones['Left_Toe'].tail.y = toe_y - -0.1
-    edit_bones['Right_Toe'].tail.y = toe_y - -0.1
+    edit_bones['Left_Toe'].tail.y = toe_y + EYE_EXTENSION
+    edit_bones['Right_Toe'].tail.y = toe_y + EYE_EXTENSION
 
 
 def create_pelvis_bones():
@@ -397,15 +501,23 @@ def create_pelvis_bones():
     pass
 
 
-def create_lower_abdomen_bone():
+def create_lower_abdomen_bone() -> None:
+    """
+    Create a LowerAbdomen deform bone between Hip and Abdomen.
+    
+    Poser figures lack a lower abdomen bone, which is needed for complete
+    spine deformation. This adds that bone if it doesn't already exist.
+    
+    Note: Weight painting for this bone must be done manually, blending
+    with Hip and Abdomen weight groups.
+    """
     edit_bones = bpy.context.object.data.edit_bones
 
-    # check for existence of LowerAbdomen bone first
+    # Check if LowerAbdomen bone already exists
     if edit_bones.find('LowerAbdomen') != -1:
         return
 
-    # create new LowerAbdomen bone, move to between hip and abdomen, make hip its parent,
-    # then parent abdomen to new bone
+    # Create new LowerAbdomen bone between hip and abdomen
     bone_lower_abdomen = create_bone(
         edit_bones=edit_bones,
         name='LowerAbdomen',
@@ -416,5 +528,6 @@ def create_lower_abdomen_bone():
         bbone_size=0.001,
     )
 
+    # Re-parent Abdomen to new LowerAbdomen bone
     edit_bones['Abdomen'].parent = bone_lower_abdomen
 
