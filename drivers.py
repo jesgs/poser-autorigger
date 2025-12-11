@@ -1,7 +1,6 @@
 """Driver setup functions for FK/IK switching."""
 
 import bpy
-from typing import Optional
 
 
 def _add_fkik_driver(constraint, armature, data_path: str) -> None:

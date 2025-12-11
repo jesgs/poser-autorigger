@@ -88,7 +88,7 @@ def import_custom_shapes(collection_name: str) -> None:
     # Link into the scene tree so it's visible
     coll = bpy.data.collections.get("WGTS")
     if not coll:
-        raise RuntimeError("Failed to load WGTS collection from file")
+        raise RuntimeError(f"Failed to load WGTS collection from {blend_path}")
     
     coll.name = "WGTS-" + collection_name  # Rename collection to match armature
     if coll.name not in bpy.context.scene.collection.children:

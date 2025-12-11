@@ -15,7 +15,7 @@ from .helpers import rename_all_bones, create_bone, create_fkik_chains, assign_c
 from .custom_shapes import import_custom_shapes, assign_all_custom_shapes
 from .constants import (
     ORIENTATION_NORMAL, ORIENTATION_GLOBAL, PIVOT_INDIVIDUAL, PIVOT_MEDIAN,
-    PREFIX_DEF, ROTATION_MODE_XYZ
+    PREFIX_DEF, ROTATION_MODE_XYZ, BONE_SIZE_DEF
 )
 import bpy
 
@@ -525,7 +525,7 @@ def create_lower_abdomen_bone() -> None:
         use_deform=True,
         head=edit_bones['Hip'].tail,
         tail=edit_bones['Abdomen'].head,
-        bbone_size=0.001,
+        bbone_size=BONE_SIZE_DEF,
     )
 
     # Re-parent Abdomen to new LowerAbdomen bone
