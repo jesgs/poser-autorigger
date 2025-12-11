@@ -70,6 +70,8 @@ POLE_LENGTH = 0.125
 FINGER_CTRL_LENGTH = 0.025
 FINGER_CTRL_SIZE_MULTIPLIER = 3
 EYE_TARGET_DISTANCE = 0.25
+EYE_BONE_EXTENSION = 0.1  # Extension for eye bones forward for better control
+TOE_BONE_EXTENSION = 0.1  # Extension for toe bones forward for foot roll
 
 # Constraint influence defaults
 DEFAULT_INFLUENCE = 1.0

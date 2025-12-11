@@ -15,7 +15,7 @@ from .helpers import rename_all_bones, create_bone, create_fkik_chains, assign_c
 from .custom_shapes import import_custom_shapes, assign_all_custom_shapes
 from .constants import (
     ORIENTATION_NORMAL, ORIENTATION_GLOBAL, PIVOT_INDIVIDUAL, PIVOT_MEDIAN,
-    PREFIX_DEF, ROTATION_MODE_XYZ, BONE_SIZE_DEF
+    PREFIX_DEF, ROTATION_MODE_XYZ, BONE_SIZE_DEF, EYE_BONE_EXTENSION, TOE_BONE_EXTENSION
 )
 import bpy
 
@@ -474,15 +474,14 @@ def fix_bones() -> None:
     edit_bones['Chest'].tail.z = center_z
 
     # Extend eye bones forward for better control
-    EYE_EXTENSION = 0.1
     eye_y = edit_bones['Left_Eye'].tail.y
-    edit_bones['Left_Eye'].tail.y = eye_y + EYE_EXTENSION
-    edit_bones['Right_Eye'].tail.y = eye_y + EYE_EXTENSION
+    edit_bones['Left_Eye'].tail.y = eye_y + EYE_BONE_EXTENSION
+    edit_bones['Right_Eye'].tail.y = eye_y + EYE_BONE_EXTENSION
 
     # Extend toe bones forward for better foot roll control
     toe_y = edit_bones['Left_Toe'].tail.y
-    edit_bones['Left_Toe'].tail.y = toe_y + EYE_EXTENSION
-    edit_bones['Right_Toe'].tail.y = toe_y + EYE_EXTENSION
+    edit_bones['Left_Toe'].tail.y = toe_y + TOE_BONE_EXTENSION
+    edit_bones['Right_Toe'].tail.y = toe_y + TOE_BONE_EXTENSION
 
 
 def create_pelvis_bones():
