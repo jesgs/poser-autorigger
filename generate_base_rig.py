@@ -161,7 +161,7 @@ def setup_poser_figure(armature: Object) -> None:
     bpy.context.scene.tool_settings.transform_pivot_point = PIVOT_MEDIAN
     
     # Hide buttock bones (not typically used for animation)
-    bones = armature.data.bones
+    bones = armature.pose.bones
     for side in ['.L', '.R']:
         bones[f'FK-Buttock{side}'].hide = True
         bones[f'IK-Buttock{side}'].hide = True
