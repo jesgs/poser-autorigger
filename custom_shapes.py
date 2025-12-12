@@ -96,6 +96,6 @@ def import_custom_shapes(collection_name: str) -> None:
 
     for shape in coll.all_objects:
         new_shape_name = 'WGT_' + collection_name + '_'
-        shape.name = shape.name.replace('WGT-', new_shape_name)
+        shape.name = shape.name.replace('WGT_Armature_', new_shape_name)
 
     coll.hide_viewport = True
