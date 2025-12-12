@@ -16,7 +16,7 @@ def assign_all_custom_shapes(armature: Object) -> None:
         armature: The armature object to assign shapes to
     """
     pose_bones = armature.pose.bones
-    shape_collection_name = 'WGTS-' + armature.name
+    shape_collection_name = 'WGTS_' + armature.name
     shape_collection = bpy.data.collections[shape_collection_name]
     
     # Finger controls need custom transform override
@@ -38,7 +38,7 @@ def assign_all_custom_shapes(armature: Object) -> None:
         if 'DEF' in bone.name or 'MCH' in bone.name:
             continue
 
-        shape_name = 'WGT-' + armature.name + '-' + bone.name
+        shape_name = 'WGT_' + armature.name + '_' + bone.name
         found = shape_collection.all_objects.find(shape_name)
 
         if found != -1:
@@ -90,12 +90,12 @@ def import_custom_shapes(collection_name: str) -> None:
     if not coll:
         raise RuntimeError(f"Failed to load WGTS collection from {blend_path}")
     
-    coll.name = "WGTS-" + collection_name  # Rename collection to match armature
+    coll.name = "WGTS_" + collection_name  # Rename collection to match armature
     if coll.name not in bpy.context.scene.collection.children:
         bpy.context.scene.collection.children.link(coll)
 
     for shape in coll.all_objects:
-        new_shape_name = 'WGT-' + collection_name + '-'
+        new_shape_name = 'WGT_' + collection_name + '_'
         shape.name = shape.name.replace('WGT-', new_shape_name)
 
     coll.hide_viewport = True
