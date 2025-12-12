@@ -1,8 +1,19 @@
+"""Functions for creating base rig bones (root and properties)."""
+
 import bpy
 from bpy.types import EditBone
 from .helpers import create_bone
 
+
 def create_properties_bone() -> EditBone:
+    """
+    Create the PROPERTIES bone for storing custom rig properties.
+    
+    This bone holds FK/IK switches and other control properties.
+    
+    Returns:
+        The created PROPERTIES EditBone
+    """
     edit_bones = bpy.context.object.data.edit_bones
     collection = bpy.context.object.data.collections_all.get('Root')
     return create_bone(
@@ -18,10 +29,17 @@ def create_properties_bone() -> EditBone:
     )
 
 
-def create_root():
+def create_root() -> None:
+    """
+    Create the root bone by repurposing the Poser 'Body' bone.
+    
+    The Body bone from Poser FBX is renamed to 'root' and repositioned
+    at the origin to serve as the main parent for the rig hierarchy.
+    """
     collection = bpy.context.object.data.collections_all.get('Root')
     edit_bones = bpy.context.object.data.edit_bones
-    # rename Body to root, disconnect, and drop to 0
+    
+    # Rename Body to root, disconnect, and position at origin
     edit_bones['Hip'].use_connect = False
     edit_bones['Body'].use_deform = False
     edit_bones['Body'].head = [0, 0, 0]

@@ -100,3 +100,78 @@ The process to create the `LowerAbdomen` bone and reposition the `Body` bone and
 - **Validation:**
   - [ ] Check for missing bones or naming conventions (warn if not standard).
   - [ ] Warn if FBX armature isn’t compatible (missing limbs, etc.).
+
+## Development
+
+### Code Quality
+
+This project uses several tools to maintain code quality:
+
+- **Ruff**: Fast Python linter and formatter
+- **Type Hints**: Type annotations for better code clarity
+- **Docstrings**: Comprehensive documentation for all functions
+
+### Setting Up Development Environment
+
+```bash
+# Install development dependencies
+pip install ruff
+
+# Run linter
+ruff check .
+
+# Format code
+ruff format .
+```
+
+### Code Style Guidelines
+
+- Follow PEP 8 style guidelines with 120 character line limit
+- Use type hints for function parameters and return values
+- Write docstrings for all public functions and classes
+- Keep functions focused and single-purpose
+- Use constants from `constants.py` instead of magic numbers
+
+### Bone Naming Conventions
+
+The add-on uses consistent naming prefixes:
+- `DEF-`: Deform bones (affect mesh)
+- `IK-`: IK chain bones
+- `FK-`: FK chain bones
+- `CTRL-`: Control bones (visible to animators)
+- `MCH-`: Mechanism bones (helper bones)
+
+Suffixes indicate side:
+- `.L`: Left side
+- `.R`: Right side
+- No suffix: Center/spine bones
+
+### Required Bones
+
+For proper rig generation, the imported FBX must contain these bones:
+- `Body` (renamed to `root`)
+- `Hip`
+- `Chest`
+- `Head`
+- `Neck`
+
+### Testing
+
+Currently, this add-on requires manual testing in Blender. To test:
+
+1. Open Blender
+2. Install the add-on as a development extension
+3. Import a Poser FBX character
+4. Select the armature
+5. Run the "Generate Base Rig" operator from the Rig Poser panel
+
+### Contributing
+
+Contributions are welcome! Please:
+
+1. Follow the code style guidelines
+2. Add docstrings to new functions
+3. Update constants.py for any new magic values
+4. Test changes with a Poser FBX import
+5. Update documentation as needed
+
