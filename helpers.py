@@ -1,16 +1,19 @@
 """Helper functions for bone manipulation and rig creation."""
 
+from collections.abc import Sequence
+from typing import Literal
+
 import bpy
-from typing import Sequence, Literal
-from mathutils import Vector, Matrix
-from bpy.types import ArmatureEditBones, EditBone, BoneCollection
+from bpy.types import ArmatureEditBones, BoneCollection, EditBone
+from mathutils import Matrix, Vector
+
 from .colorscheme import assign_custom_color
 
 
 def rename_all_bones(prefix: str = '') -> None:
     """
     Rename all bones in the active armature with the given prefix.
-    
+
     Args:
         prefix: String to prepend to bone names (e.g., 'DEF-')
     """
@@ -24,14 +27,14 @@ def rename_all_bones(prefix: str = '') -> None:
 def rename_bone(name: str, prefix: str = '') -> str:
     """
     Rename a bone following Blender naming conventions.
-    
+
     Converts Poser naming (Left_/Right_ or l/r prefix) to Blender naming (.L/.R suffix).
     Skips special bones like 'root' and 'PROPERTIES'.
-    
+
     Args:
         name: Original bone name
         prefix: Optional prefix to add (e.g., 'DEF-')
-        
+
     Returns:
         New bone name with appropriate suffix, or empty string if bone should not be renamed
     """
@@ -52,17 +55,31 @@ def rename_bone(name: str, prefix: str = '') -> str:
     return prefix + new_name
 
 
-def create_bone(edit_bones: ArmatureEditBones, name: str, bbone_size: float = 0.001, 
-                head: Vector | Sequence[float] = 0.0, tail: Vector | Sequence[float] = 0.0, 
-                length: float = None, parent: EditBone = None, 
-                display_type: Literal["ARMATURE_DEFINED", "OCTAHEDRAL", "STICK", "BBONE", "ENVELOPE", "WIRE"] = "ARMATURE_DEFINED", 
-                use_deform: bool = False, use_connect: bool = False,
-                palette: Literal["DEFAULT", "THEME01", "THEME02", "THEME03", "THEME04", "THEME05", "THEME06", "THEME07", "THEME08", "THEME09", "THEME10", "THEME11", "THEME12", "THEME13", "THEME14", "THEME15", "THEME16", "THEME17", "THEME18", "THEME19", "THEME20", "CUSTOM"] = 'CUSTOM',
-                custom_color: dict[str, tuple[float, float, float]] = None,
-                collection: BoneCollection = None) -> EditBone:
+def create_bone(
+    edit_bones: ArmatureEditBones,
+    name: str,
+    bbone_size: float = 0.001,
+    head: Vector | Sequence[float] = 0.0,
+    tail: Vector | Sequence[float] = 0.0,
+    length: float = None,
+    parent: EditBone = None,
+    display_type: Literal[
+        "ARMATURE_DEFINED", "OCTAHEDRAL", "STICK", "BBONE", "ENVELOPE", "WIRE"
+    ] = "ARMATURE_DEFINED",
+    use_deform: bool = False,
+    use_connect: bool = False,
+    palette: Literal[
+        "DEFAULT", "THEME01", "THEME02", "THEME03", "THEME04", "THEME05",
+        "THEME06", "THEME07", "THEME08", "THEME09", "THEME10", "THEME11",
+        "THEME12", "THEME13", "THEME14", "THEME15", "THEME16", "THEME17",
+        "THEME18", "THEME19", "THEME20", "CUSTOM"
+    ] = 'CUSTOM',
+    custom_color: dict[str, tuple[float, float, float]] = None,
+    collection: BoneCollection = None,
+) -> EditBone:
     """
     Create a new bone with specified properties.
-    
+
     Args:
         edit_bones: Armature edit bones collection
         name: Name for the new bone
@@ -77,7 +94,7 @@ def create_bone(edit_bones: ArmatureEditBones, name: str, bbone_size: float = 0.
         palette: Color palette theme
         custom_color: Custom color dict with 'normal', 'select', 'active' keys
         collection: Bone collection to assign to
-        
+
     Returns:
         Newly created EditBone
     """
@@ -106,7 +123,7 @@ def create_bone(edit_bones: ArmatureEditBones, name: str, bbone_size: float = 0.
 def align_bone_to_source(source_bone: EditBone, target_bone: EditBone) -> None:
     """
     Align source bone's orientation to match target bone.
-    
+
     Args:
         source_bone: Bone to be aligned
         target_bone: Bone to align to
@@ -124,7 +141,7 @@ def align_bone_to_source(source_bone: EditBone, target_bone: EditBone) -> None:
 def move_bone_along_local_axis(bone: EditBone, distance: float) -> None:
     """
     Move a bone along its local axis direction.
-    
+
     Args:
         bone: Bone to move
         distance: Distance to move (positive for tail direction, negative for head)
@@ -138,13 +155,23 @@ def move_bone_along_local_axis(bone: EditBone, distance: float) -> None:
     bone.tail += translation_vector
 
 
-def create_fkik_chains(bone_chains: list[str], parent: str = '', prefix: str = 'IK', 
-                       suffix: str = '.L',
-                       palette: Literal["DEFAULT", "THEME01", "THEME02", "THEME03", "THEME04", "THEME05", "THEME06", "THEME07", "THEME08", "THEME09", "THEME10", "THEME11", "THEME12", "THEME13", "THEME14", "THEME15", "THEME16", "THEME17", "THEME18", "THEME19", "THEME20", "CUSTOM"] = 'THEME01',
-                       bone_size: float = 0.002, use_connect: bool = False) -> list[EditBone]:
+def create_fkik_chains(
+    bone_chains: list[str],
+    parent: str = '',
+    prefix: str = 'IK',
+    suffix: str = '.L',
+    palette: Literal[
+        "DEFAULT", "THEME01", "THEME02", "THEME03", "THEME04", "THEME05",
+        "THEME06", "THEME07", "THEME08", "THEME09", "THEME10", "THEME11",
+        "THEME12", "THEME13", "THEME14", "THEME15", "THEME16", "THEME17",
+        "THEME18", "THEME19", "THEME20", "CUSTOM"
+    ] = 'THEME01',
+    bone_size: float = 0.002,
+    use_connect: bool = False,
+) -> list[EditBone]:
     """
     Create FK or IK chains from deform bones.
-    
+
     Args:
         bone_chains: List of bone names to create chains for
         parent: Parent bone name for the first bone in chain
@@ -153,7 +180,7 @@ def create_fkik_chains(bone_chains: list[str], parent: str = '', prefix: str = '
         palette: Color palette theme
         bone_size: B-Bone display size
         use_connect: Whether to connect bones in the chain
-        
+
     Returns:
         List of created EditBone objects
     """
@@ -176,10 +203,7 @@ def create_fkik_chains(bone_chains: list[str], parent: str = '', prefix: str = '
 
     for i, fkik_chain_item in enumerate(fkik_chains):
         # parenting
-        if i == 0:
-            fkik_bone_parent = edit_bones[parent]
-        else:
-            fkik_bone_parent = edit_bones[fkik_chains[i - 1]]
+        fkik_bone_parent = edit_bones[parent] if i == 0 else edit_bones[fkik_chains[i - 1]]
 
         connect_bone = use_connect and i != 0
         deform_bone_name = fkik_chain_item.replace(prefix, 'DEF')
