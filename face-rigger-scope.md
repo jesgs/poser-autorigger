@@ -1,11 +1,6 @@
 Face Rig Generator
 ---
-
-Import the face-rig from a blend file.
-User fits the bones to the face.
-User generates weight-maps.
-User runs the generator (a separate operator from generating the base rig).
-
+This is a face rig that uses bendy bone chains, similar to CloudRig. If I were using CloudRig, these bones would have the Face: Grid type.
 A standard bendy bone chain consist of a:
 1. Start Handle bone
 2. Bendy bone (this bone has its segment set higher than 1)
@@ -43,10 +38,4 @@ A standard bendy bone chain consist of a:
         - These bones should be named "Tweak-{Main_Bone_Chain_Name}{#}{.L|.R}"
     5. Follow steps 1 through 4 as outlined in **Standard Bendy Bone Chain Construction**
     6. For the final bendy bone, follow steps 6 and 7 in **Standard Bendy Bone Chain Construction**
-    
-Optional:
-* Generate an inner mouth rig (Jaw and Teeth Upper/Lower)
-    - if selected, certain lower face control bones should be parented to the jaw bone
-
-* Generate a tongue rig
 
